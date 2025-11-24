@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Controllers\Admin\**" />
+	  <Compile Remove="Data\Configurations\**" />
+	  <Compile Remove="Views\MedicalRecords\**" />
+	  <Compile Remove="wwwroot\css\Новая папка1\**" />
+	  <Compile Remove="wwwroot\css\Новая папка\**" />
+	  <Compile Remove="wwwroot\Новая папка1\**" />
+	  <Compile Remove="Новая папка1\**" />
+	  <Content Remove="Controllers\Admin\**" />
+	  <Content Remove="Data\Configurations\**" />
+	  <Content Remove="Views\MedicalRecords\**" />
+	  <Content Remove="wwwroot\css\Новая папка1\**" />
+	  <Content Remove="wwwroot\css\Новая папка\**" />
+	  <Content Remove="wwwroot\Новая папка1\**" />
+	  <Content Remove="Новая папка1\**" />
+	  <EmbeddedResource Remove="Controllers\Admin\**" />
+	  <EmbeddedResource Remove="Data\Configurations\**" />
+	  <EmbeddedResource Remove="Views\MedicalRecords\**" />
+	  <EmbeddedResource Remove="wwwroot\css\Новая папка1\**" />
+	  <EmbeddedResource Remove="wwwroot\css\Новая папка\**" />
+	  <EmbeddedResource Remove="wwwroot\Новая папка1\**" />
+	  <EmbeddedResource Remove="Новая папка1\**" />
+	  <None Remove="Controllers\Admin\**" />
+	  <None Remove="Data\Configurations\**" />
+	  <None Remove="Views\MedicalRecords\**" />
+	  <None Remove="wwwroot\css\Новая папка1\**" />
+	  <None Remove="wwwroot\css\Новая папка\**" />
+	  <None Remove="wwwroot\Новая папка1\**" />
+	  <None Remove="Новая папка1\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Views\Admin\Dashboard.cshtml.cs" />
+	  <Compile Remove="Views\Admin\Diagnoses.cshtml.cs" />
+	  <Compile Remove="Views\Admin\Users.cshtml.cs" />
+	  <Compile Remove="Views\Auth\Login.cshtml.cs" />
+	  <Compile Remove="Views\Auth\Register.cshtml.cs" />
+	  <Compile Remove="Views\Home\Index.cshtml.cs" />
+	  <Compile Remove="Views\Patient\CreateAppointment.cshtml.cs" />
+	  <Compile Remove="Views\Patient\MyAppointments.cshtml.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="wwwroot\images" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BCrypt.Net-Next" Version="4.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Session" Version="2.1.1" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="wwwroot\images\" />
+	</ItemGroup>
+
+</Project>
