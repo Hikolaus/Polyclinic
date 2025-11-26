@@ -1,0 +1,65 @@
+﻿body {
+    background-color: #f8f9fa;
+}
+
+@keyframes bell-shake {
+    0% {
+        transform: rotate(0);
+    }
+
+    15% {
+        transform: rotate(5deg);
+    }
+
+    30% {
+        transform: rotate(-5deg);
+    }
+
+    45% {
+        transform: rotate(4deg);
+    }
+
+    60% {
+        transform: rotate(-4deg);
+    }
+
+    75% {
+        transform: rotate(2deg);
+    }
+
+    85% {
+        transform: rotate(-2deg);
+    }
+
+    100% {
+        transform: rotate(0);
+    }
+}
+
+.bell-shake {
+    animation: bell-shake 2s infinite;
+    color: #ffc107;
+}
+
+.notification-active {
+    text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.bg-primary {
+    background-color: #3498db !important;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+    }
