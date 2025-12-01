@@ -1,0 +1,98 @@
+﻿.patient-profile {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #3498db;
+}
+
+.appointment-item {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+    .appointment-item:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+.medical-record-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.medical-record-header {
+    background-color: #e3f2fd;
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.medical-record-body {
+    padding: 15px;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-scheduled {
+    background-color: #3498db;
+    color: white;
+}
+
+.status-confirmed {
+    background-color: #27ae60;
+    color: white;
+}
+
+.status-inprogress {
+    background-color: #f39c12;
+    color: white;
+}
+
+.status-completed {
+    background-color: #7f8c8d;
+    color: white;
+}
+
+.status-cancelled {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.stats-card {
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.stats-card-primary {
+    background-color: #3498db;
+}
+
+.stats-card-success {
+    background-color: #27ae60;
+}
+
+.stats-card-warning {
+    background-color: #f39c12;
+}
+
+.stats-card-danger {
+    background-color: #e74c3c;
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 10px 0;
+}
