@@ -1,0 +1,85 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Регистрация пациента";
+}
+
+@section Styles {
+    <link href="~/css/auth.css" rel="stylesheet" />
+    <link href="~/css/common.css" rel="stylesheet" />
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="text-center mb-4">Регистрация пациента</h2>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <form method="post" action="/Auth/Register">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="login" class="form-label">Логин *</label>
+                    <input type="text" class="form-control" id="login" name="login" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="fullName" class="form-label">ФИО *</label>
+                    <input type="text" class="form-control" id="fullName" name="fullName" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="password" class="form-label">Пароль *</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="confirmPassword" class="form-label">Подтверждение пароля *</label>
+                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label">Телефон</label>
+                    <input type="text" class="form-control" id="phone" name="phone">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="policyNumber" class="form-label">Номер полиса *</label>
+                <input type="text" class="form-control" id="policyNumber" name="policyNumber" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="dateOfBirth" class="form-label">Дата рождения *</label>
+                <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="gender" class="form-label">Пол *</label>
+                <select class="form-control" id="gender" name="gender" required>
+                    <option value="">Выберите пол</option>
+                    <option value="Male">Мужской</option>
+                    <option value="Female">Женский</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="address" class="form-label">Адрес</label>
+                <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-3">Зарегистрироваться</button>
+        </form>
+
+        <div class="text-center">
+            <a href="/Auth/Login">Уже есть аккаунт? Войдите</a>
+        </div>
+    </div>
+</div>
