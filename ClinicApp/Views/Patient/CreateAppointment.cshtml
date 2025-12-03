@@ -1,0 +1,108 @@
+﻿@model ClinicApp.Models.Core.Appointment
+@{
+    ViewData["Title"] = "Запись на прием";
+}
+
+@section Styles {
+    <link href="~/css/appointment.css" rel="stylesheet" />
+}
+
+<div class="container mt-4">
+    <h2>Запись к врачу</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <form action="/Patient/CreateAppointment" method="post" id="bookingForm">
+
+        <input type="hidden" name="doctorId" id="selectedDoctorId" value="" />
+        <input type="hidden" name="dateStr" id="selectedDateTime" value="" />
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Специализация</label>
+                <select id="specSelect" class="form-control">
+                    <option value="">-- Выберите --</option>
+                    @if (ViewBag.Specializations != null)
+                    {
+                        foreach (var spec in ViewBag.Specializations)
+                        {
+                            <option value="@spec.Id">@spec.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Врач</label>
+                <select id="docSelect" class="form-control" disabled>
+                    <option value="">Сначала выберите специализацию</option>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Дата приема</label>
+
+                <div id="calendarWrapper" class="d-none">
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="prevMonthBtn">&lt;</button>
+                            <span id="monthYearDisplay"></span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="nextMonthBtn">&gt;</button>
+                        </div>
+                        <div class="calendar-grid">
+
+                            <div class="calendar-day-header">Пн</div>
+                            <div class="calendar-day-header">Вт</div>
+                            <div class="calendar-day-header">Ср</div>
+                            <div class="calendar-day-header">Чт</div>
+                            <div class="calendar-day-header">Пт</div>
+                            <div class="calendar-day-header">Сб</div>
+                            <div class="calendar-day-header">Вс</div>
+
+                            <div id="calendarDays" style="display:contents"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="selectDoctorHint" class="text-muted mt-2 border p-2 rounded bg-light">
+                    <small>Выберите врача, чтобы увидеть расписание.</small>
+                </div>
+            </div>
+        </div>
+
+        <div id="slotsContainer" class="d-none mt-3 p-3 border rounded bg-light">
+            <h5 class="mb-3">Свободное время на <span id="selectedDateText" class="text-primary"></span>:</h5>
+            <div id="slotsLoader" class="d-none text-muted">Загрузка слотов...</div>
+            <div id="slotsList" class="d-flex flex-wrap gap-2"></div>
+        </div>
+
+        <div id="waitlistContainer" class="d-none mt-4 p-4 border rounded bg-warning-subtle text-center">
+            <div class="mb-3">
+                <i class="fas fa-calendar-times fa-3x text-warning mb-2"></i>
+                <h5 class="text-dark">Нет свободного времени?</h5>
+                <p class="text-muted mb-0 small">
+                    На ближайшие 2 недели свободных слотов нет. <br>
+                    Оставьте заявку, и мы пришлем уведомление, если кто-то отменит запись.
+                </p>
+            </div>
+            <button type="button" class="btn btn-warning text-dark fw-bold px-4 shadow-sm" id="btnJoinWaitlist">
+                <i class="fas fa-bell me-2"></i> Сообщить о свободном месте
+            </button>
+        </div>
+
+        <div id="reasonBlock" class="d-none mt-4 p-3 border rounded shadow-sm">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Причина обращения:</label>
+                <textarea name="reason" class="form-control" rows="3" required placeholder="Кратко опишите, что вас беспокоит..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Подтвердить запись</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/appointment.js"></script>
+}
