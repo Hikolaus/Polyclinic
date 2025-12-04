@@ -1,0 +1,71 @@
+﻿@model List<ClinicApp.Models.Core.Notification>
+@{
+    ViewData["Title"] = "Уведомления";
+    var unread = Model.Where(n => !n.IsRead).ToList();
+    var read = Model.Where(n => n.IsRead).ToList();
+}
+
+@section Styles {
+    <link href="~/css/notifications.css" rel="stylesheet" />
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-bell text-warning me-2"></i>Уведомления</h2>
+    </div>
+
+    <div id="unreadContainer" class="mb-4">
+        <h5 class="text-primary fw-bold mb-3">
+            Новые <span class="badge bg-danger rounded-pill" id="unreadCounter">@unread.Count</span>
+        </h5>
+
+        @if (unread.Any())
+        {
+            foreach (var n in unread)
+            {
+                <div class="card mb-2 border-primary shadow-sm notification-card" id="notif-@n.Id">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title fw-bold text-primary mb-1">@n.Title</h6>
+                            <p class="card-text mb-0">@n.Message</p>
+                            <small class="text-muted">@n.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                        </div>
+                        <button class="btn btn-sm btn-success ms-3" onclick="markRead(@n.Id, this)" title="Отметить прочитанным">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-light text-center text-muted">Новых уведомлений нет</div>
+        }
+    </div>
+
+    <div id="readContainer" class="history-container mt-5">
+        <h5 class="text-secondary fw-bold mb-3 border-bottom pb-2">История</h5>
+
+        @if (read.Any())
+        {
+            foreach (var n in read)
+            {
+                <div class="card mb-2 bg-light border-0 notification-card is-read">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold text-dark mb-1">@n.Title</h6>
+                        <p class="card-text text-muted mb-0">@n.Message</p>
+                        <small class="text-muted">@n.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-muted text-center">История уведомлений пуста.</p>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/notifications.js"></script>
+}
