@@ -1,0 +1,169 @@
+﻿@{
+    ViewData["Title"] = "Панель администратора";
+}
+
+<div class="container-fluid mt-3">
+    <h2 class="mb-4"><i class="fas fa-chart-line me-2"></i>Панель управления</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase mb-0 opacity-75">Пациенты</h6>
+                            <h2 class="my-2 display-6 fw-bold">@ViewBag.TotalPatients</h2>
+                        </div>
+                        <i class="fas fa-users fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase mb-0 opacity-75">Врачи</h6>
+                            <h2 class="my-2 display-6 fw-bold">@ViewBag.TotalDoctors</h2>
+                        </div>
+                        <i class="fas fa-user-md fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase mb-0 opacity-75">Всего записей</h6>
+                            <h2 class="my-2 display-6 fw-bold text-dark">@ViewBag.TotalAppointments</h2>
+                        </div>
+                        <i class="fas fa-calendar-check fa-3x text-dark opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fw-bold text-primary"><i class="fas fa-wave-square me-2"></i>Динамика посещений (14 дней)</h5>
+        </div>
+        <div class="card-body">
+            <div style="height: 300px;">
+                <canvas id="appointmentsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-danger"><i class="fas fa-heartbeat me-2"></i>Топ-5 Заболеваний</h5>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="diagnosesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-success"><i class="fas fa-child me-2"></i>Возраст пациентов</h5>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const ctx1 = document.getElementById('appointmentsChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: @Html.Raw(Json.Serialize(ViewBag.Dates)),
+            datasets: [{
+                label: 'Посещения',
+                data: @Html.Raw(Json.Serialize(ViewBag.DateCounts)),
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#3498db',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    const ctx2 = document.getElementById('diagnosesChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: @Html.Raw(Json.Serialize(ViewBag.DiagLabels)),
+            datasets: [{
+                data: @Html.Raw(Json.Serialize(ViewBag.DiagData)),
+                backgroundColor: [
+                    '#e74c3c',
+                    '#f1c40f',
+                    '#3498db',
+                    '#9b59b6',
+                    '#2ecc71'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' }
+            }
+        }
+    });
+
+    const ctx3 = document.getElementById('ageChart').getContext('2d');
+    new Chart(ctx3, {
+        type: 'bar',
+        data: {
+            labels: ['Дети (0-17)', 'Молодежь (18-35)', 'Средний (36-60)', 'Пожилые (60+)'],
+            datasets: [{
+                label: 'Кол-во пациентов',
+                data: @Html.Raw(Json.Serialize(ViewBag.AgeData)),
+                backgroundColor: [
+                    '#20c997',
+                    '#17a2b8',
+                    '#ffc107',
+                    '#6c757d'
+                ],
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+</script>
