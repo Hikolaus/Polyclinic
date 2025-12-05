@@ -1,0 +1,36 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Требуется авторизация";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <h1 class="text-warning">🔒 Требуется авторизация</h1>
+            <p class="lead">Для доступа к этой странице необходимо войти в систему.</p>
+
+            @if (ViewBag.Message != null)
+            {
+                <div class="alert alert-info mt-3">
+                    @ViewBag.Message
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger mt-3">
+                    @TempData["Error"]
+                </div>
+            }
+
+            <div class="mt-4">
+                <a href="@Url.Action("Login", "Auth")" class="btn btn-primary me-2">
+                    <i class="fas fa-sign-in-alt"></i> Войти в систему
+                </a>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary">
+                    <i class="fas fa-home"></i> На главную
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
