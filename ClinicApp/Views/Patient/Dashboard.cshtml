@@ -1,0 +1,125 @@
+﻿@model ClinicApp.Models.PatientModels.Patient
+@{
+    ViewData["Title"] = "Панель управления пациента";
+    var recentAppointments = ViewBag.RecentAppointments as List<ClinicApp.Models.Core.Appointment>;
+}
+
+@section Styles {
+    <link href="~/css/patient.css" rel="stylesheet" />
+    <link href="~/css/common.css" rel="stylesheet" />
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-user-circle me-2"></i>Мой профиль</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-1"><small class="text-muted">ФИО:</small><br><strong>@Model.FullName</strong></p>
+                <p class="card-text mb-1"><small class="text-muted">Полис:</small><br><strong>@Model.PolicyNumber</strong></p>
+                <p class="card-text mb-1"><small class="text-muted">Дата рождения:</small><br>@Model.DateOfBirth.ToString("dd.MM.yyyy")</p>
+                <p class="card-text mb-1"><small class="text-muted">Телефон:</small><br>@Model.Phone</p>
+
+                <hr>
+                <a href="@Url.Action("MyAppointments", "Patient")" class="btn btn-primary w-100">
+                    <i class="fas fa-list me-1"></i> Мои записи
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h4><i class="fas fa-calendar-alt me-2"></i>Ближайшие записи</h4>
+
+        @if (recentAppointments != null && recentAppointments.Count > 0)
+        {
+            <div class="table-responsive mb-4">
+                <table class="table table-hover border">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата</th>
+                            <th>Врач</th>
+                            <th>Причина</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var appointment in recentAppointments)
+                        {
+                            <tr>
+                                <td>@appointment.AppointmentDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <strong>@appointment.Doctor?.Specialization?.Name</strong><br>
+                                    <small class="text-muted">@appointment.Doctor?.User?.FullName</small>
+                                </td>
+                                <td>@appointment.Reason</td>
+                                <td>
+                                    @switch (appointment.Status)
+                                    {
+                                        case ClinicApp.Models.Core.AppointmentStatus.Scheduled:
+                                            <span class="badge bg-primary">Запланировано</span>
+                                            break;
+                                        case ClinicApp.Models.Core.AppointmentStatus.Confirmed:
+                                            <span class="badge bg-success">Подтверждено</span>
+                                            break;
+                                        case ClinicApp.Models.Core.AppointmentStatus.Completed:
+                                            <span class="badge bg-secondary">Завершено</span>
+                                            break;
+                                        case ClinicApp.Models.Core.AppointmentStatus.Cancelled:
+                                            <span class="badge bg-danger">Отменено</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-light text-dark">@appointment.Status</span>
+                                            break;
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info mb-4">
+                У вас нет активных записей на прием.
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-bolt me-2 text-warning"></i>Быстрые действия</h5>
+                        <div class="d-grid gap-2">
+                            <a href="@Url.Action("CreateAppointment", "Patient")" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i> Записаться к врачу
+                            </a>
+
+                            <a href="@Url.Action("MedicalRecords", "Patient")" class="btn btn-outline-info">
+                                <i class="fas fa-file-medical me-1"></i> Медкарта
+                            </a>
+
+                            <a href="@Url.Action("MyAppointments", "Patient")" class="btn btn-outline-secondary">
+                                <i class="fas fa-history me-1"></i> История записей
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-chart-pie me-2 text-success"></i>Статистика</h5>
+                        <p class="mb-1">Всего записей: <strong>@ViewBag.TotalAppointments</strong></p>
+                        <p class="mb-0">Предстоящих: <strong>@ViewBag.UpcomingAppointments</strong></p>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
