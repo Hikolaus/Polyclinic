@@ -1,0 +1,89 @@
+﻿@model List<ClinicApp.Models.Core.Appointment>
+@{
+    ViewData["Title"] = "Мои записи";
+}
+
+<div class="container mt-4">
+    <h2>Мои записи</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="mb-3">
+        <a href="/Patient/CreateAppointment" class="btn btn-primary">Записаться к врачу</a>
+    </div>
+
+    @if (Model.Any())
+    {
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Дата и время</th>
+                    <th>Врач</th>
+                    <th>Специализация</th>
+                    <th>Причина</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var rowClass = item.Status == ClinicApp.Models.Core.AppointmentStatus.Cancelled ? "table-secondary text-muted" : "";
+
+                    <tr class="@rowClass">
+                        <td>@item.AppointmentDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@(item.Doctor?.User?.FullName ?? "Неизвестно")</td>
+                        <td>@(item.Doctor?.Specialization?.Name ?? "-")</td>
+                        <td>@item.Reason</td>
+                        <td>
+                            @if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Scheduled)
+                            {
+                                <span class="badge bg-primary">Запланировано</span>
+                            }
+                            else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Confirmed)
+                            {
+                                <span class="badge bg-success">Подтверждено</span>
+                            }
+                            else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Cancelled)
+                            {
+                                <span class="badge bg-danger">Отменено</span>
+                            }
+                            else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Completed)
+                            {
+                                <span class="badge bg-secondary">Завершено</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark">@item.Status</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Scheduled ||
+                                                item.Status == ClinicApp.Models.Core.AppointmentStatus.Confirmed)
+                            {
+                                <form action="/Patient/CancelAppointment" method="post"
+                                      onsubmit="return confirm('Вы уверены, что хотите отменить запись?');">
+                                    <input type="hidden" name="appointmentId" value="@item.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        &times; Отменить
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">У вас пока нет записей.</div>
+    }
+</div>
