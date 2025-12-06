@@ -1,0 +1,136 @@
+﻿@model List<ClinicApp.Models.Core.User>
+@{
+    ViewData["Title"] = "Управление пользователями";
+    var currentRole = Context.Request.Query["role"].ToString();
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-users-cog me-2"></i>Управление пользователями</h2>
+
+    <div class="card mb-4 shadow-sm border-primary">
+        <div class="card-body">
+
+            <form action="/Admin/Users" method="get" class="row g-3">
+
+                <div class="col-md-5">
+
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Поиск по имени, логину или email..."
+                           value="@Context.Request.Query["search"]">
+                </div>
+
+                <div class="col-md-4">
+
+                    <select name="role" class="form-select" onchange="this.form.submit()">
+                        <option value="">Все роли</option>
+
+
+                        <!option value="Patient" @(currentRole == "Patient" ? "selected" : "")>Пациенты</!option>
+                        <!option value="Doctor" @(currentRole == "Doctor" ? "selected" : "")>Врачи</!option>
+                        <!option value="Administrator" @(currentRole == "Administrator" ? "selected" : "")>Администраторы</!option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Поиск
+                    </button>
+                </div>
+
+                <div class="col-12 d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Найдено: @Model.Count пользователей</span>
+                    <a href="/Admin/Users" class="btn btn-sm btn-link text-decoration-none">Сбросить фильтры</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Логин</th>
+                            <th>ФИО</th>
+                            <th>Роль</th>
+                            <th>Email / Телефон</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.Id</td>
+                                <td class="fw-bold">@user.Login</td>
+                                <td>@user.FullName</td>
+                                <td>
+                                    @switch (user.Role)
+                                    {
+                                        case "Administrator":
+                                            <span class="badge bg-danger">Админ</span>
+                                            break;
+                                        case "Doctor":
+
+                                            <span class="badge bg-primary">Врач</span>
+                                            break;
+                                        case "Patient":
+
+                                            <span class="badge bg-success">Пациент</span>
+                                            break;
+                                        default:
+
+                                            <span class="badge bg-secondary">@user.Role</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <div class="small">@user.Email</div>
+                                    <div class="small text-muted">@user.Phone</div>
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success">Активен</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary">Заблокирован</span>
+                                    }
+                                </td>
+                                <td>
+                                    <form action="/Admin/ToggleUserStatus" method="post" style="display:inline;">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        @if (user.IsActive)
+                                        {
+                                            <button class="btn btn-sm btn-outline-warning" title="Заблокировать">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-success" title="Разблокировать">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info text-center mt-4">
+            <i class="fas fa-search mb-2 fa-2x"></i><br>
+            Пользователи не найдены по заданным критериям.
+        </div>
+    }
+</div>

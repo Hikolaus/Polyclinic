@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Регистрация врача";
+    var specs = ViewBag.Specializations as List<ClinicApp.Models.Core.Specialization>;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Регистрация нового врача</h4>
+                </div>
+                <div class="card-body p-4">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
+                    <form action="/Admin/RegisterDoctor" method="post">
+                        <h5 class="text-muted mb-3">Учетная запись</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Логин</label>
+                                <input type="text" name="login" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Пароль</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <h5 class="text-muted mb-3 mt-4">Личные данные</h5>
+                        <div class="mb-3">
+                            <label class="form-label">ФИО полностью</label>
+                            <input type="text" name="fullName" class="form-control" required>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Специализация</label>
+                                <select name="specializationId" class="form-select" required>
+                                    @foreach (var s in specs)
+                                    {
+                                        <option value="@s.Id">@s.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Опыт (лет)</label>
+                                <input type="number" name="experience" class="form-control" value="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">№ Лицензии</label>
+                                <input type="text" name="license" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Зарегистрировать</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
