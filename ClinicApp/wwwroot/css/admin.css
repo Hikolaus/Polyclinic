@@ -1,0 +1,73 @@
+﻿.admin-stats {
+    margin-bottom: 30px;
+}
+
+.admin-stat-card {
+    text-align: center;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+    .admin-stat-card h5 {
+        color: white;
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+
+    .admin-stat-card .display-6 {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+.admin-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+    .admin-actions .btn {
+        min-width: 80px;
+    }
+
+.admin-modal .modal-lg {
+    max-width: 900px;
+}
+
+.admin-modal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.admin-filters {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.user-role-badge {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.chart-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
