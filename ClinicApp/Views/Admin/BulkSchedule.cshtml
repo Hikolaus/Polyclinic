@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "Генератор расписания";
+    var doctors = ViewBag.Doctors as List<ClinicApp.Models.DoctorModels.Doctor> ?? new List<ClinicApp.Models.DoctorModels.Doctor>();
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-calendar-plus me-2"></i>Массовое создание расписания</h2>
+    <p class="text-muted">Быстрое заполнение графика для врача.</p>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form action="/Admin/BulkSchedule" method="post">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Врач</label>
+                    <select name="doctorId" class="form-select form-select-lg" required>
+                        @if (doctors.Any())
+                        {
+                            foreach (var d in doctors)
+                            {
+                                var docName = d.User?.FullName ?? $"Врач #{d.Id}";
+                                var docSpec = d.Specialization?.Name ?? "Без спец.";
+                                <option value="@d.Id">@docName (@docSpec)</option>
+                            }
+                        }
+                        else
+                        {
+                            <option value="" disabled selected>Список врачей пуст или не загружен</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Дни работы</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="checkbox" class="btn-check" name="daysOfWeek" value="1" id="d1" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="d1">Пн</label>
+
+                        <input type="checkbox" class="btn-check" name="daysOfWeek" value="2" id="d2" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="d2">Вт</label>
+
+                        <input type="checkbox" class="btn-check" name="daysOfWeek" value="3" id="d3" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="d3">Ср</label>
+
+                        <input type="checkbox" class="btn-check" name="daysOfWeek" value="4" id="d4" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="d4">Чт</label>
+
+                        <input type="checkbox" class="btn-check" name="daysOfWeek" value="5" id="d5" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="d5">Пт</label>
+
+                        <input type="checkbox" class="btn-check" name="daysOfWeek" value="6" id="d6" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="d6">Сб</label>
+
+                        <input type="checkbox" class="btn-check" name="daysOfWeek" value="7" id="d7" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="d7">Вс</label>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Начало смены</label>
+                        <input type="time" name="startTime" class="form-control" value="09:00" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Конец смены</label>
+                        <input type="time" name="endTime" class="form-control" value="18:00" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Слот (мин)</label>
+                        <input type="number" name="duration" class="form-control" value="15">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100">Сгенерировать график</button>
+            </form>
+        </div>
+    </div>
+</div>
