@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "Регистрация врача";
+    var specs = ViewBag.Specializations as List<ClinicApp.Models.Core.Specialization>;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Регистрация нового врача</h4>
+                </div>
+                <div class="card-body p-4">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
+                    <form action="/Admin/RegisterDoctor" method="post">
+
+                        <h5 class="text-muted mb-3 border-bottom pb-2">Учетная запись</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Логин <span class="text-danger">*</span></label>
+                                <input type="text" name="login" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Пароль <span class="text-danger">*</span></label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <h5 class="text-muted mb-3 mt-4 border-bottom pb-2">Личные данные</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">ФИО полностью <span class="text-danger">*</span></label>
+                            <input type="text" name="fullName" class="form-control" required>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" placeholder="doctor@clinic.ru">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Телефон</label>
+                                <input type="text" name="phone" class="form-control" placeholder="+7 (999) 000-00-00">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Специализация <span class="text-danger">*</span></label>
+                                <select name="specializationId" class="form-select" required>
+                                    @if (specs != null)
+                                    {
+                                        foreach (var s in specs)
+                                        {
+                                            <option value="@s.Id">@s.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Опыт (лет)</label>
+                                <input type="number" name="experience" class="form-control" value="0" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">№ Лицензии <span class="text-danger">*</span></label>
+                                <input type="text" name="license" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Зарегистрировать</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
