@@ -1,0 +1,286 @@
+﻿@model List<ClinicApp.Models.Core.Schedule>
+@{
+    ViewData["Title"] = "Редактирование графика";
+    var doctor = ViewBag.Doctor as ClinicApp.Models.DoctorModels.Doctor;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Настройка графика</h2>
+            <h5 class="text-muted">
+                <i class="fas fa-user-md me-1"></i> @(doctor?.User?.FullName ?? "Врач не найден")
+                <span class="badge bg-info text-dark ms-2">@(doctor?.Specialization?.Name ?? "-")</span>
+            </h5>
+        </div>
+        <a href="@Url.Action("Schedules", "Admin")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> К списку
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="card mb-4 border-primary shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-plus-circle me-1"></i> Добавить рабочее время
+        </div>
+        <div class="card-body bg-light">
+            <form action="/Admin/AddSchedule" method="post" class="row g-3">
+                <input type="hidden" name="DoctorId" value="@(doctor?.Id ?? 0)" />
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">День недели</label>
+                    <select class="form-select" name="DayOfWeek" required>
+                        <option value="1">Понедельник</option>
+                        <option value="2">Вторник</option>
+                        <option value="3">Среда</option>
+                        <option value="4">Четверг</option>
+                        <option value="5">Пятница</option>
+                        <option value="6">Суббота</option>
+                        <option value="7">Воскресенье</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Начало</label>
+                    <input type="time" class="form-control" name="StartTime" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Конец</label>
+                    <input type="time" class="form-control" name="EndTime" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Длит. (мин)</label>
+                    <input type="number" class="form-control" name="SlotDurationMinutes" value="15" min="5" step="5">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100 fw-bold">
+                        <i class="fas fa-save me-1"></i> Добавить
+                    </button>
+                </div>
+
+                <div class="col-12 mt-2">
+                    <a class="small text-decoration-none" data-bs-toggle="collapse" href="#advancedAdd" role="button">
+                        <i class="fas fa-sliders-h me-1"></i> Дополнительно (Перерыв, Лимит)
+                    </a>
+                    <div class="collapse mt-2" id="advancedAdd">
+                        <div class="row g-3 card card-body border-0 bg-white">
+                            <div class="col-md-3">
+                                <label class="small text-muted">Перерыв с</label>
+                                <input type="time" class="form-control form-control-sm" name="BreakStart">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small text-muted">Перерыв по</label>
+                                <input type="time" class="form-control form-control-sm" name="BreakEnd">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small text-muted">Макс. пациентов</label>
+                                <input type="number" class="form-control form-control-sm" name="MaxPatients" value="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>День</th>
+                            <th>Время</th>
+                            <th>Перерыв</th>
+                            <th>Слот</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold">
+                                    @switch (s.DayOfWeek)
+                                    {
+                                        case 1:
+                                            <text>Понедельник</text>
+                                            ; break;
+                                        case 2:
+
+                                            <text>Вторник</text>
+                                            ; break;
+                                        case 3:
+
+                                            <text>Среда</text>
+                                            ; break;
+                                        case 4:
+
+                                            <text>Четверг</text>
+                                            ; break;
+                                        case 5:
+
+                                            <text>Пятница</text>
+                                            ; break;
+                                        case 6:
+
+                                            <text>Суббота</text>
+                                            ; break;
+                                        case 7:
+
+                                            <text>Воскресенье</text>
+                                            ; break;
+                                    }
+                                </td>
+                                <td>@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm")</td>
+                                <td>
+                                    @(s.BreakStart.HasValue ? $"{s.BreakStart:hh\\:mm} - {s.BreakEnd:hh\\:mm}" : "-")
+                                </td>
+                                <td>@s.SlotDurationMinutes мин</td>
+                                <td>
+                                    <form action="/Admin/ToggleSchedule" method="post" style="display:inline;">
+                                        <input type="hidden" name="scheduleId" value="@s.Id" />
+                                        <button type="submit" class="btn btn-sm rounded-pill px-3 @(s.IsActive ? "btn-success" : "btn-secondary")">
+                                            @(s.IsActive ? "Активен" : "Отключен")
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary me-1 edit-btn"
+                                            data-id="@s.Id"
+                                            data-day="@s.DayOfWeek"
+                                            data-start="@s.StartTime.ToString(@"hh\:mm")"
+                                            data-end="@s.EndTime.ToString(@"hh\:mm")"
+                                            data-slot="@s.SlotDurationMinutes"
+                                            data-bstart="@(s.BreakStart.HasValue? s.BreakStart.Value.ToString(@"hh\:mm") : "")"
+                                            data-bend="@(s.BreakEnd.HasValue? s.BreakEnd.Value.ToString(@"hh\:mm") : "")"
+                                            data-max="@s.MaxPatients"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editModal">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <form action="/Admin/DeleteSchedule" method="post" onsubmit="return confirm('Удалить этот слот?');" style="display:inline;">
+                                        <input type="hidden" name="scheduleId" value="@s.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning text-center p-4">
+            <i class="fas fa-calendar-times fa-2x mb-3"></i>
+            <h5>График работы пуст</h5>
+            <p>Добавьте рабочее время, используя форму выше.</p>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Изменить график</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Admin/UpdateSchedule" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="Id" id="editId" />
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">День недели</label>
+                            <select class="form-select" name="DayOfWeek" id="editDay" required>
+                                <option value="1">Понедельник</option>
+                                <option value="2">Вторник</option>
+                                <option value="3">Среда</option>
+                                <option value="4">Четверг</option>
+                                <option value="5">Пятница</option>
+                                <option value="6">Суббота</option>
+                                <option value="7">Воскресенье</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Начало</label>
+                            <input type="time" class="form-control" name="StartTime" id="editStart" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Конец</label>
+                            <input type="time" class="form-control" name="EndTime" id="editEnd" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Длит. приема (мин)</label>
+                            <input type="number" class="form-control" name="SlotDurationMinutes" id="editSlot" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Макс. пациентов</label>
+                            <input type="number" class="form-control" name="MaxPatients" id="editMax">
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <h6 class="border-bottom pb-2 text-muted">Перерыв</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Начало перерыва</label>
+                            <input type="time" class="form-control" name="BreakStart" id="editBreakStart">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Конец перерыва</label>
+                            <input type="time" class="form-control" name="BreakEnd" id="editBreakEnd">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var editModal = document.getElementById('editModal');
+        editModal.addEventListener('show.bs.modal', function (event) {
+
+            var button = event.relatedTarget;
+
+            var id = button.getAttribute('data-id');
+            var day = button.getAttribute('data-day');
+            var start = button.getAttribute('data-start');
+            var end = button.getAttribute('data-end');
+            var slot = button.getAttribute('data-slot');
+            var bStart = button.getAttribute('data-bstart');
+            var bEnd = button.getAttribute('data-bend');
+            var max = button.getAttribute('data-max');
+
+            document.getElementById('editId').value = id;
+            document.getElementById('editDay').value = day;
+            document.getElementById('editStart').value = start;
+            document.getElementById('editEnd').value = end;
+            document.getElementById('editSlot').value = slot;
+            document.getElementById('editBreakStart').value = bStart;
+            document.getElementById('editBreakEnd').value = bEnd;
+            document.getElementById('editMax').value = max;
+        });
+    });
+</script>
