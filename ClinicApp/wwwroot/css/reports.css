@@ -1,0 +1,90 @@
+﻿.report-card {
+    text-align: center;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+}
+
+    .report-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .report-card h6 {
+        color: white;
+        font-size: 14px;
+        margin-bottom: 10px;
+        opacity: 0.9;
+    }
+
+    .report-card h4 {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0;
+    }
+
+.report-table {
+    font-size: 14px;
+}
+
+    .report-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+.chart-wrapper {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.export-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.monthly-stat {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+    .monthly-stat .month {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .monthly-stat .numbers {
+        flex: 1;
+        text-align: right;
+    }
+
+    .monthly-stat .percentage {
+        flex: 1;
+        text-align: right;
+        font-weight: bold;
+    }
+
+.print-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .report-card {
+        break-inside: avoid;
+    }
+}
