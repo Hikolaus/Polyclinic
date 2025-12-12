@@ -1,0 +1,115 @@
+﻿@model ClinicApp.Models.DoctorModels.Doctor
+@{
+    ViewData["Title"] = "Панель врача";
+    var todayAppointments = ViewBag.TodayAppointments as List<ClinicApp.Models.Core.Appointment>;
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-primary shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title text-primary">@Model.FullName</h4>
+                <p class="card-text fw-bold">@Model.Specialization?.Name</p>
+                <hr>
+                <p class="mb-1"><small class="text-muted">Лицензия:</small> @Model.LicenseNumber</p>
+                <p class="mb-0"><small class="text-muted">Опыт:</small> @Model.Experience лет</p>
+            </div>
+        </div>
+
+        <div class="card mt-3 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-muted mb-3">Быстрые действия</h5>
+                <div class="d-grid gap-2">
+                    <a href="@Url.Action("Schedule")" class="btn btn-outline-primary text-start">
+                        <i class="fas fa-calendar-alt me-2"></i> Мое расписание
+                    </a>
+                    <a href="@Url.Action("Appointments")" class="btn btn-outline-primary text-start">
+                        <i class="fas fa-list-ul me-2"></i> Все записи
+                    </a>
+                    <a href="@Url.Action("Patients")" class="btn btn-outline-info text-start">
+                        <i class="fas fa-search me-2"></i> Найти пациента
+                    </a>
+                    <a href="@Url.Action("Prescriptions")" class="btn btn-outline-secondary text-start">
+                        <i class="fas fa-archive me-2"></i> Архив рецептов
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h4 class="mb-3"><i class="fas fa-calendar-day me-2"></i>Сегодняшние приемы</h4>
+        @if (todayAppointments != null && todayAppointments.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle shadow-sm bg-white rounded">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Время</th>
+                            <th>Пациент</th>
+                            <th>Причина</th>
+                            <th style="min-width: 120px;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in todayAppointments)
+                        {
+                            string rowClass = "";
+                            if (item.Status == ClinicApp.Models.Core.AppointmentStatus.NoShow ||
+                            item.Status == ClinicApp.Models.Core.AppointmentStatus.Cancelled)
+                            {
+                                rowClass = "table-secondary text-muted";
+                            }
+                            else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Completed)
+                            {
+                                rowClass = "table-success";
+                            }
+
+                            <tr class="@rowClass">
+                                <td class="fw-bold">@item.AppointmentDateTime.ToString("HH:mm")</td>
+                                <td>@item.Patient?.User?.FullName</td>
+                                <td>@item.Reason</td>
+                                <td>
+                                    @if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Scheduled ||
+                                                                item.Status == ClinicApp.Models.Core.AppointmentStatus.Confirmed)
+                                    {
+                                        <a href="@Url.Action("Consultation", "Doctor", new { id = item.Id })"
+                                           class="btn btn-sm btn-success w-100">
+                                            <i class="fas fa-play me-1"></i> Начать
+                                        </a>
+                                    }
+                                    else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.InProgress)
+                                    {
+                                        <a href="@Url.Action("Consultation", "Doctor", new { id = item.Id })"
+                                           class="btn btn-sm btn-warning w-100">
+                                            <i class="fas fa-stethoscope me-1"></i> Продолжить
+                                        </a>
+                                    }
+                                    else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Completed)
+                                    {
+                                        <span class="badge bg-success w-100 py-2">Завершен</span>
+                                    }
+                                    else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.NoShow)
+                                    {
+                                        <span class="badge bg-secondary w-100 py-2">Неявка</span>
+                                    }
+                                    else if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Cancelled)
+                                    {
+                                        <span class="badge bg-danger w-100 py-2">Отменен</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-light text-center p-5 border">
+                <i class="fas fa-coffee fa-3x text-muted mb-3"></i>
+                <p class="text-muted">На сегодня приемов нет.</p>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,28 @@
+﻿.card {
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+    }
+
+.badge {
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s;
+}
+
+.shadow-sm {
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+}
