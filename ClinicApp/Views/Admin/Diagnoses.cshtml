@@ -1,0 +1,184 @@
+﻿@model List<ClinicApp.Models.Core.Diagnosis>
+@{
+    ViewData["Title"] = "Справочник диагнозов (МКБ)";
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-book-medical me-2"></i>Справочник диагнозов (МКБ)</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="card mb-4 mt-3 border-warning shadow-sm">
+        <div class="card-header bg-warning text-dark fw-bold" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#addForm">
+            <i class="fas fa-plus me-1"></i> Добавить новый диагноз
+        </div>
+        <div id="addForm" class="collapse">
+            <div class="card-body">
+                <form action="/Admin/AddDiagnosis" method="post">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label small text-muted">Код МКБ</label>
+                            <input type="text" name="Code" class="form-control" placeholder="J01" required>
+                        </div>
+                        <div class="col-md-10">
+                            <label class="form-label small text-muted">Название болезни</label>
+                            <input type="text" name="Name" class="form-control" placeholder="Острый синусит" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Шаблон лечения</label>
+                            <textarea name="DefaultTreatment" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Шаблон рекомендаций</label>
+                            <textarea name="DefaultRecommendations" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-warning text-dark">Добавить</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <form action="/Admin/Diagnoses" method="get">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Поиск по коду или названию..." value="@Context.Request.Query["search"]">
+                    <button class="btn btn-secondary" type="submit">Найти</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 10%">Код</th>
+                        <th style="width: 30%">Название</th>
+                        <th style="width: 40%">Шаблоны (есть/нет)</th>
+                        <th style="width: 20%" class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var d in Model)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary">@d.Code</span></td>
+                                <td class="fw-bold">@d.Name</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(d.DefaultTreatment))
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success me-1">Лечение</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(d.DefaultRecommendations))
+                                    {
+                                        <span class="badge bg-info-subtle text-info border border-info">Рекомендации</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary me-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editModal"
+                                            data-id="@d.Id"
+                                            data-code="@d.Code"
+                                            data-name="@d.Name"
+                                            data-treatment="@d.DefaultTreatment"
+                                            data-recom="@d.DefaultRecommendations">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <form action="/Admin/DeleteDiagnosis" method="post" onsubmit="return confirm('Удалить диагноз?');" style="display:inline;">
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <button class="btn btn-sm btn-outline-danger border-0"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" class="text-center text-muted p-4">Ничего не найдено</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Редактировать диагноз</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Admin/UpdateDiagnosis" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="Id" id="editId" />
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Код МКБ</label>
+                            <input type="text" name="Code" id="editCode" class="form-control" required>
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label fw-bold">Название</label>
+                            <input type="text" name="Name" id="editName" class="form-control" required>
+                        </div>
+
+                        <div class="col-12">
+                            <hr class="text-muted">
+                            <h6 class="text-primary">Шаблоны автозаполнения</h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Лечение</label>
+                            <textarea name="DefaultTreatment" id="editTreatment" class="form-control" rows="5"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Рекомендации</label>
+                            <textarea name="DefaultRecommendations" id="editRecom" class="form-control" rows="5"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var editModal = document.getElementById('editModal');
+        editModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+
+            var id = button.getAttribute('data-id');
+            var code = button.getAttribute('data-code');
+            var name = button.getAttribute('data-name');
+            var treat = button.getAttribute('data-treatment');
+            var recom = button.getAttribute('data-recom');
+
+            document.getElementById('editId').value = id;
+            document.getElementById('editCode').value = code;
+            document.getElementById('editName').value = name;
+            document.getElementById('editTreatment').value = treat;
+            document.getElementById('editRecom').value = recom;
+        });
+    });
+</script>
