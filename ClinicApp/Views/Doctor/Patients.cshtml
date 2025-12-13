@@ -1,0 +1,87 @@
+﻿@model List<ClinicApp.Models.PatientModels.Patient>
+@{
+    ViewData["Title"] = "Реестр пациентов";
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-users me-2"></i>Реестр пациентов</h2>
+    <p class="text-muted">Поиск медицинской карты по ФИО или номеру полиса.</p>
+
+    <div class="card mb-4 shadow-sm border-primary">
+        <div class="card-body">
+            <form action="/Doctor/Patients" method="get" class="row g-2">
+                <div class="col-md-10">
+                    <input type="text" name="search" class="form-control form-control-lg"
+                           placeholder="Введите ФИО или номер полиса..."
+                           value="@ViewBag.SearchTerm">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search"></i> Найти
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ФИО</th>
+                            <th>Дата рождения</th>
+                            <th>Полис ОМС</th>
+                            <th>Контакты</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold text-primary">@p.User?.FullName</td>
+                                <td>
+                                    @p.DateOfBirth.ToString("dd.MM.yyyy")
+                                    <span class="text-muted small">(@(DateTime.Now.Year - p.DateOfBirth.Year) лет)</span>
+                                </td>
+                                <td>@p.PolicyNumber</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(p.User?.Phone))
+                                    {
+                                        <div><i class="fas fa-phone-alt text-muted me-1"></i>@p.User.Phone</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(p.User?.Email))
+                                    {
+                                        <div class="small text-muted">@p.User.Email</div>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("PatientDetails", "Doctor", new { id = p.Id })"
+                                       class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-file-medical"></i> Медкарта
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+    {
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-search-minus fa-2x mb-2"></i><br>
+            По запросу "<strong>@ViewBag.SearchTerm</strong>" ничего не найдено.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info text-center">
+            Введите данные для поиска. Показаны первые 50 пациентов.
+        </div>
+    }
+</div>

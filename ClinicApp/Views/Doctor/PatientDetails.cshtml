@@ -1,0 +1,151 @@
+﻿@model ClinicApp.Models.PatientModels.Patient
+@{
+    ViewData["Title"] = "Карта пациента";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="fas fa-user-injured me-2"></i>@Model.User?.FullName</h3>
+        <a href="@Url.Action("Patients", "Doctor")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Назад к поиску
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-primary text-white">Личные данные</div>
+                <div class="card-body">
+                    <p class="mb-1 text-muted small">Дата рождения</p>
+                    <p class="fw-bold">@Model.DateOfBirth.ToString("dd.MM.yyyy") (@(DateTime.Now.Year - Model.DateOfBirth.Year) лет)</p>
+                    <p class="mb-1 text-muted small">Пол</p>
+                    <p>@(Model.Gender == "Male" ? "Мужской" : "Женский")</p>
+                    <p class="mb-1 text-muted small">Полис ОМС</p>
+                    <p class="fw-bold text-success">@Model.PolicyNumber</p>
+                    <p class="mb-1 text-muted small">Телефон</p>
+                    <p>@(Model.User?.Phone ?? "-")</p>
+                    <p class="mb-1 text-muted small">Адрес</p>
+                    <p>@(Model.Address ?? "-")</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="patientTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">
+                                <i class="fas fa-notes-medical me-1 text-danger"></i> История болезней
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="prescriptions-tab" data-bs-toggle="tab" data-bs-target="#prescriptions" type="button">
+                                <i class="fas fa-pills me-1 text-success"></i> Лекарства
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="visits-tab" data-bs-toggle="tab" data-bs-target="#visits" type="button">
+                                <i class="fas fa-calendar-check me-1 text-primary"></i> Визиты
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body tab-content">
+
+                    <div class="tab-pane fade show active" id="history">
+                        @if (Model.MedicalRecords.Any())
+                        {
+                            <div class="accordion" id="medHistoryAcc">
+                                @foreach (var rec in Model.MedicalRecords.OrderByDescending(r => r.RecordDate))
+                                {
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#rec-@rec.Id">
+                                                <div class="d-flex w-100 justify-content-between me-3">
+                                                    <strong>@rec.RecordDate.ToString("dd.MM.yyyy") — @rec.Diagnosis</strong>
+                                                    <span class="text-muted small">@rec.Appointment?.Doctor?.Specialization?.Name</span>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="rec-@rec.Id" class="accordion-collapse collapse" data-bs-parent="#medHistoryAcc">
+                                            <div class="accordion-body">
+                                                <p><strong>Жалобы:</strong> @rec.Complaints</p>
+                                                <p><strong>Симптомы:</strong> @rec.Symptoms</p>
+                                                <p><strong>Лечение:</strong> @rec.Treatment</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+
+                            <p class="text-muted text-center my-4">Записей нет.</p>
+                        }
+                    </div>
+
+                    <div class="tab-pane fade" id="prescriptions">
+                        @if (Model.Prescriptions.Any())
+                        {
+                            <table class="table table-sm table-hover align-middle">
+                                <thead><tr><th>Дата</th><th>Препарат</th><th>Дозировка</th><th>Тип</th></tr></thead>
+                                <tbody>
+                                    @foreach (var p in Model.Prescriptions.OrderByDescending(x => x.IssueDate))
+                                    {
+                                        <tr>
+                                            <td>@p.IssueDate.ToString("dd.MM.yyyy")</td>
+                                            <td class="fw-bold">@p.Medication?.Name</td>
+                                            <td>@p.Dosage</td>
+                                            <td>
+                                                @if (p.Medication != null && p.Medication.PrescriptionRequired)
+                                                {
+                                                    <span class="badge bg-danger">Рецепт</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">Назначение</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+
+                            <p class="text-muted text-center my-4">Лекарств не назначалось.</p>
+                        }
+                    </div>
+
+                    <div class="tab-pane fade" id="visits">
+                        @if (Model.Appointments.Any())
+                        {
+                            <table class="table table-sm">
+                                <thead><tr><th>Дата</th><th>Врач</th><th>Причина</th><th>Статус</th></tr></thead>
+                                <tbody>
+                                    @foreach (var a in Model.Appointments.OrderByDescending(x => x.AppointmentDateTime))
+                                    {
+                                        <tr>
+                                            <td>@a.AppointmentDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td>@a.Doctor?.Specialization?.Name</td>
+                                            <td>@a.Reason</td>
+                                            <td>@a.Status</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+
+                            <p class="text-muted text-center">Записей нет.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
