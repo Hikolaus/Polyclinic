@@ -1,0 +1,206 @@
+﻿@model ClinicApp.Models.Core.Appointment
+@{
+    ViewData["Title"] = "Прием пациента";
+    var allMeds = ViewBag.AllMedications as List<ClinicApp.Models.Core.Medication>;
+    var strictMeds = ViewBag.StrictMedications as List<ClinicApp.Models.Core.Medication>;
+    var diagnoses = ViewBag.Diagnoses as List<ClinicApp.Models.Core.Diagnosis>;
+}
+
+@section Styles {
+    <link href="~/css/consultation.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+}
+
+<div class="container-fluid consultation-wrapper">
+    <div class="row mb-2 flex-shrink-0">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h4 class="m-0 text-secondary">
+                <i class="fas fa-user-md me-2"></i>Пациент: <strong>@(Model.Patient?.User?.FullName)</strong>
+            </h4>
+            <a href="/Doctor/Appointments" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Назад
+            </a>
+        </div>
+    </div>
+
+    <div class="row h-100 pb-4">
+        <div class="col-md-4 h-100 d-flex flex-column">
+            <div class="card mb-3 flex-shrink-0 shadow-sm">
+                <div class="card-header bg-info text-white py-2">
+                    <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Данные</h6>
+                </div>
+                <div class="card-body py-2">
+                    <small>
+                        <strong>Дата рождения:</strong> @(Model.Patient?.DateOfBirth.ToString("dd.MM.yyyy") ?? "-")<br>
+                        <strong>Возраст:</strong>
+                        @if (Model.Patient != null)
+                        {
+                            @((DateTime.Now.Year - Model.Patient.DateOfBirth.Year))
+                        }
+ лет<br>
+                        <strong>Полис:</strong> @Model.Patient?.PolicyNumber
+                    </small>
+                </div>
+            </div>
+
+            <div class="history-container shadow-sm flex-grow-1">
+                <div class="card-header bg-secondary text-white py-2 rounded-top">
+                    <h6 class="mb-0"><i class="fas fa-history me-2"></i>История болезней</h6>
+                </div>
+                <div class="history-list bg-white">
+                    @if (Model.Patient?.MedicalRecords != null && Model.Patient.MedicalRecords.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var record in Model.Patient.MedicalRecords.OrderByDescending(r => r.RecordDate))
+                            {
+                                if (record.AppointmentId != Model.Id)
+                                {
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <small class="text-muted">@record.RecordDate.ToString("dd.MM.yyyy")</small>
+                                            <small class="text-info fw-bold">@record.Appointment?.Doctor?.Specialization?.Name</small>
+                                        </div>
+                                        <div class="fw-bold text-dark small">@record.Diagnosis</div>
+                                        <div class="small text-muted text-truncate">@record.Treatment</div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center text-muted small">История пуста</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8 right-column">
+            <div class="complaint-banner">
+                <h5 class="m-0">
+                    <i class="fas fa-comment-medical me-2"></i>
+                    Жалоба: <span class="fw-bold text-dark">@(string.IsNullOrEmpty(Model.Reason) ? "Не указана" : Model.Reason)</span>
+                </h5>
+            </div>
+
+            <div class="scrollable-form-body shadow-sm">
+                <form action="/Doctor/CompleteConsultation" method="post" id="consultationForm">
+                    <input type="hidden" name="AppointmentId" value="@Model.Id" />
+
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-primary text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-stethoscope me-2"></i>Осмотр и Диагноз</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Симптомы (объективно):</label>
+                                <textarea name="Symptoms" class="form-control" rows="3" required placeholder="Температура, давление, хрипы..."></textarea>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label fw-bold small">Диагноз (МКБ-10):</label>
+                                <select name="DiagnosisId" id="diagnosisSelect" class="form-select diagnosis-select" required>
+                                    <option value="">Выберите диагноз...</option>
+                                    @if (diagnoses != null)
+                                    {
+                                        foreach (var d in diagnoses)
+                                        {
+                                            <option value="@d.Id">@d.Code — @d.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label text-muted small">Уточнение (опционально):</label>
+                                <input type="text" name="DiagnosisNote" class="form-control form-control-sm" placeholder="Напр. левосторонний, стадия ремиссии..." />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4 border-success">
+                        <div class="card-header bg-success text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-notes-medical me-2"></i>Назначения</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Лечение (режим, процедуры):</label>
+                                <textarea name="Treatment" id="treatmentArea" class="form-control" rows="3" placeholder="Постельный режим..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Рекомендации (диета, образ жизни):</label>
+                                <textarea name="Recommendations" id="recomArea" class="form-control" rows="2" placeholder="Обильное питье..."></textarea>
+                            </div>
+
+                            <hr class="text-success opacity-25">
+
+                            <label class="form-label fw-bold text-success small">
+                                <i class="fas fa-capsules me-1"></i>Назначить лекарства (без рецепта):
+                            </label>
+                            <div class="bg-light p-3 rounded border border-success-subtle">
+                                <div id="medsContainer"></div>
+                                <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addMedRow()">
+                                    <i class="fas fa-plus"></i> Добавить лекарство
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4 border-danger">
+                        <div class="card-header bg-danger text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-file-prescription me-2"></i>Строгие рецепты</h6>
+                        </div>
+                        <div class="card-body bg-light">
+                            <div class="alert alert-light border-danger text-danger py-1 px-2 mb-3">
+                                <small><i class="fas fa-info-circle"></i> Только препараты, требующие рецепта.</small>
+                            </div>
+                            <div id="recipesContainer"></div>
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="addRecipeRow()">
+                                <i class="fas fa-plus"></i> Выписать рецепт
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid pb-3">
+                        <button type="submit" class="btn btn-dark btn-lg shadow">
+                            <i class="fas fa-check-circle me-2"></i> Завершить прием
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="medRowTemplate">
+    <div class="row g-2 mb-2 align-items-end med-row border-bottom pb-2">
+        <div class="col-md-5"><label class="small text-muted">Препарат</label><select class="form-select form-select-sm med-select" required><option value="">Поиск...</option>@if (allMeds != null) { foreach (var m in allMeds) {
+        <option value="@m.Id">@m.Name (@m.Form)</option>
+                } }
+</select></div>
+        <div class="col-md-3"><label class="small text-muted">Дозировка</label><input type="text" class="form-control form-control-sm med-dosage" required></div>
+        <div class="col-md-3"><label class="small text-muted">Инструкция</label><input type="text" class="form-control form-control-sm med-instr"></div>
+        <div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeRow(this)"><i class="fas fa-times"></i></button></div>
+    </div>
+</template>
+<template id="recipeRowTemplate">
+    <div class="row g-2 mb-2 align-items-end recipe-row border-bottom border-danger pb-2">
+        <div class="col-md-5"><label class="small text-muted text-danger fw-bold">Рецептурный препарат</label><select class="form-select form-select-sm recipe-select" required><option value="">Поиск...</option>@if (strictMeds != null) { foreach (var m in strictMeds) {
+        <option value="@m.Id">@m.Name (@m.Form)</option>
+                } }
+</select></div>
+        <div class="col-md-3"><label class="small text-muted">Дозировка</label><input type="text" class="form-control form-control-sm recipe-dosage" required></div>
+        <div class="col-md-3"><label class="small text-muted">Примечание</label><input type="text" class="form-control form-control-sm recipe-instr"></div>
+        <div class="col-md-1"><button type="button" class="btn btn-sm btn-danger w-100" onclick="removeRow(this)"><i class="fas fa-times"></i></button></div>
+    </div>
+</template>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/js/consultation.js"></script>
+
+    <script>
+        window.diagnosesData = @Html.Raw(Json.Serialize(diagnoses));
+    </script>
+}
