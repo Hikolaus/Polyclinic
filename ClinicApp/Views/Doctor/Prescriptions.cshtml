@@ -1,0 +1,53 @@
+﻿@model List<ClinicApp.Models.Core.Prescription>
+@{
+    ViewData["Title"] = "История выписанных рецептов";
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-history me-2"></i>Архив рецептов</h2>
+    <p class="text-muted">История всех выписанных препаратов.</p>
+
+    @if (Model.Any())
+    {
+        <div class="table-responsive mt-3 shadow-sm bg-white rounded">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Дата</th>
+                        <th>Пациент</th>
+                        <th>Препарат</th>
+                        <th>Дозировка</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td>@p.IssueDate.ToString("dd.MM.yyyy")</td>
+                            <td>@p.Patient?.User?.FullName</td>
+                            <td class="fw-bold">@p.Medication?.Name</td>
+                            <td>@p.Dosage</td>
+                            <td>
+                                @if (p.Status == ClinicApp.Models.Core.PrescriptionStatus.Active)
+                                {
+                                    <span class="badge bg-success">Активен</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@p.Status</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info mt-3">
+            Вы еще не выписывали рецептов.
+        </div>
+    }
+</div>
