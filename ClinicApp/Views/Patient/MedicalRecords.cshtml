@@ -1,0 +1,67 @@
+﻿@model List<ClinicApp.Models.Core.MedicalRecord>
+@{
+    ViewData["Title"] = "Медицинская карта";
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-file-medical-alt me-2"></i>Моя медицинская карта</h2>
+
+    @if (Model.Any())
+    {
+        <div class="accordion mt-4" id="medAcc">
+            @foreach (var r in Model)
+            {
+                <div class="accordion-item mb-2 border rounded">
+                    <h2 class="accordion-header" id="head-@r.Id">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c-@r.Id">
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold">@r.Diagnosis</span>
+                                <small class="text-muted">
+                                    @r.RecordDate.ToString("dd.MM.yyyy") — Врач: @(r.Appointment?.Doctor?.User?.FullName ?? "Неизвестно")
+                                </small>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="c-@r.Id" class="accordion-collapse collapse" data-bs-parent="#medAcc">
+                        <div class="accordion-body bg-light">
+                            <div class="row">
+                                <div class="col-md-6 border-end">
+                                    <h6 class="text-primary">Диагноз и Жалобы</h6>
+                                    <p><strong>Жалобы:</strong> @r.Complaints</p>
+                                    <p><strong>Симптомы:</strong> @r.Symptoms</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-success">Назначения</h6>
+                                    <p><strong>Лечение:</strong> @r.Treatment</p>
+                                    <p><strong>Рекомендации:</strong> @r.Recommendations</p>
+
+                                    @if (r.Appointment?.Prescriptions.Any() == true)
+                                    {
+                                        <hr />
+                                        <h6 class="text-danger small fw-bold">Выписанные лекарства:</h6>
+                                        <ul class="list-group list-group-flush small">
+                                            @foreach (var p in r.Appointment.Prescriptions)
+                                            {
+                                                <li class="list-group-item bg-transparent">
+                                                    <strong>@p.Medication?.Name</strong> — @p.Dosage
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info mt-4 text-center p-4">
+            <i class="fas fa-folder-open fa-2x mb-3"></i>
+            <h5>Медицинская карта пуста</h5>
+            <p>Здесь появятся записи после посещения врача.</p>
+        </div>
+    }
+</div>
