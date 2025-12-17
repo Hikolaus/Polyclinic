@@ -111,5 +111,47 @@ namespace ClinicApp.Services.Core
                 .ThenBy(s => s.StartTime)
                 .ToListAsync();
         }
+
+
+        public async Task<List<object>> GetMonthAvailability(int doctorId, int year, int month)
+        {
+            var schedules = await _context.Schedules.Where(s => s.DoctorId == doctorId && s.IsActive).ToListAsync();
+            if (!schedules.Any()) return new List<object>();
+
+            var startDate = new DateTime(year, month, 1);
+            var endDate = startDate.AddMonths(1);
+
+            var appointments = await _context.Appointments
+                .Where(a => a.DoctorId == doctorId && a.AppointmentDateTime >= startDate && a.AppointmentDateTime < endDate
+                && (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed))
+                .ToListAsync();
+
+            var result = new List<object>();
+            var maxDate = DateTime.Today.AddDays(14);
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                if (date.Date < DateTime.Today || date.Date > maxDate) continue;
+
+                int dayOfWeek = (int)date.DayOfWeek == 0 ? 7 : (int)date.DayOfWeek;
+                var schedule = schedules.FirstOrDefault(s => s.DayOfWeek == dayOfWeek);
+
+                if (schedule != null)
+                {
+                    double totalMinutes = (schedule.EndTime - schedule.StartTime).TotalMinutes;
+                    if (schedule.BreakStart.HasValue && schedule.BreakEnd.HasValue)
+                        totalMinutes -= (schedule.BreakEnd.Value - schedule.BreakStart.Value).TotalMinutes;
+
+                    int capacity = (int)(totalMinutes / schedule.SlotDurationMinutes);
+                    if (schedule.MaxPatients > 0) capacity = Math.Min(capacity, schedule.MaxPatients);
+
+                    int booked = appointments.Count(a => a.AppointmentDateTime.Date == date.Date);
+                    result.Add(new { day, fullDate = date.ToString("yyyy-MM-dd"), available = true, isFull = booked >= capacity });
+                }
+            }
+            return result;
+        }
     }
 }

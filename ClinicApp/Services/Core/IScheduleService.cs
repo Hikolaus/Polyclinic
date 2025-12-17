@@ -9,6 +9,7 @@ namespace ClinicApp.Services.Core
         Task<List<TimeSlot>> GetAvailableTimeSlots(int doctorId, DateTime date);
         Task<bool> IsTimeSlotAvailable(int doctorId, DateTime dateTime);
         Task<List<Schedule>> GetDoctorSchedules(int doctorId);
+        Task<List<object>> GetMonthAvailability(int doctorId, int year, int month);
     }
 
     public class TimeSlot
