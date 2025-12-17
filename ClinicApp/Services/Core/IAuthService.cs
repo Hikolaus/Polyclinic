@@ -1,4 +1,5 @@
 ﻿using ClinicApp.Models.Core;
+using ClinicApp.Models.PatientModels;
 
 namespace ClinicApp.Services.Core
 {
@@ -6,6 +7,7 @@ namespace ClinicApp.Services.Core
     {
         Task<User?> Authenticate(string login, string password);
         Task<bool> Register(User user);
+        Task<bool> RegisterPatient(User user, Patient patient);
         void Login(User user);
         void Logout();
         User? GetCurrentUser();

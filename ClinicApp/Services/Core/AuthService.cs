@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BCrypt.Net;
 using ClinicApp.Data;
 using ClinicApp.Models.Core;
+using ClinicApp.Models.PatientModels;
 using Microsoft.AspNetCore.Http;
-using BCrypt.Net;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicApp.Services.Core
 {
@@ -94,6 +95,30 @@ namespace ClinicApp.Services.Core
         {
             var httpContext = _httpContextAccessor.HttpContext;
             return httpContext?.Session.GetInt32("UserId") != null;
+        }
+
+        public async Task<bool> RegisterPatient(User user, Patient patient)
+        {
+            if (await _context.Users.AnyAsync(u => u.Login == user.Login)) return false;
+
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                patient.Id = user.Id;
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
         }
     }
 }
