@@ -1,0 +1,46 @@
+﻿@model ClinicApp.Models.Core.MedicalRecord
+@{
+    ViewData["Title"] = "Запись в карту";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Новая запись в медицинскую карту</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CreateMedicalRecord" method="post">
+                        <input type="hidden" name="AppointmentId" value="@ViewBag.AppointmentId" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Диагноз</label>
+                            <input name="Diagnosis" class="form-control" required placeholder="Введите диагноз..." />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Жалобы пациента</label>
+                            <textarea name="Complaints" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Назначенное лечение</label>
+                            <textarea name="Treatment" class="form-control" rows="4"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Рекомендации</label>
+                            <textarea name="Recommendations" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg">Сохранить запись</button>
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,5 +1,7 @@
-﻿using ClinicApp.Models.Core;
+﻿using ClinicApp.Controllers;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.DoctorModels;
+using ClinicApp.Models.PatientModels;
 using System.Numerics;
 
 namespace ClinicApp.Services.DoctorService
@@ -14,5 +16,9 @@ namespace ClinicApp.Services.DoctorService
         Task<List<Prescription>> GetDoctorPrescriptions();
         Task<bool> CreatePrescription(Prescription prescription);
         Task<Appointment?> GetAppointmentForConsultation(int appointmentId);
+        Task<bool> CompleteConsultationAsync(ConsultationViewModel model);
+        Task<List<Patient>> SearchPatients(string search);
+        Task<Patient?> GetPatientDetails(int id);
+        Task<(List<Medication> All, List<Medication> Strict, List<Diagnosis> Diagnoses)> GetConsultationData();
     }
 }
