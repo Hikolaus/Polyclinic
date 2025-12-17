@@ -1,0 +1,63 @@
+﻿@model List<ClinicApp.Models.Core.Appointment>
+@{
+    ViewData["Title"] = "Все записи";
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-calendar-alt me-2"></i>Все записи клиники</h2>
+    <p class="text-muted">Полный список всех приемов (прошлых и будущих).</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Дата и время</th>
+                        <th>Врач</th>
+                        <th>Пациент</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var a in Model)
+                        {
+                            <tr>
+                                <td>@a.AppointmentDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <strong>@a.Doctor?.User?.FullName</strong><br>
+                                    <small class="text-muted">@a.Doctor?.Specialization?.Name</small>
+                                </td>
+                                <td>@a.Patient?.User?.FullName</td>
+                                <td>
+                                    @switch (a.Status)
+                                    {
+                                        case ClinicApp.Models.Core.AppointmentStatus.Scheduled:
+                                            <span class="badge bg-primary">Запланировано</span>
+                                            break;
+                                        case ClinicApp.Models.Core.AppointmentStatus.Completed:
+                                            <span class="badge bg-success">Завершено</span>
+                                            break;
+                                        case ClinicApp.Models.Core.AppointmentStatus.Cancelled:
+                                            <span class="badge bg-danger">Отменено</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary">@a.Status</span>
+                                            break;
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted p-4">Записей не найдено</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
