@@ -22,12 +22,22 @@ namespace ClinicApp.Data
         public DbSet<MedicalRecord> MedicalRecords { get; set; }
         public DbSet<WaitlistRequest> WaitlistRequests { get; set; }
         public DbSet<Diagnosis> Diagnoses { get; set; }
+        public DbSet<Administrator> Administrators { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Administrator>().ToTable("Administrators");
+
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Patient>().ToTable("Patients");
             modelBuilder.Entity<Doctor>().ToTable("Doctors");
+
+            modelBuilder.Entity<MedicalRecord>()
+                .HasOne(m => m.Appointment)
+                .WithOne(a => a.MedicalRecord)
+                .HasForeignKey<MedicalRecord>(m => m.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             var appointmentStatusConverter = new ValueConverter<AppointmentStatus, string>(
                 v => v.ToString(),
