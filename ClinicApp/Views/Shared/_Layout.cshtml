@@ -96,8 +96,7 @@
                     @if (Context.Session.GetInt32("UserId") != null)
                     {
                         var userId = Context.Session.GetInt32("UserId").Value;
-                        var unreadCount = await NotificationService.GetUnreadCount(userId);
-                        var hasUnread = unreadCount > 0;
+                        var userRole = Context.Session.GetString("UserRole");
 
                         <li class="nav-item">
                             <span class="nav-link text-light">
@@ -105,23 +104,29 @@
                             </span>
                         </li>
 
-                        <li class="nav-item position-relative mx-2">
-                            <a class="nav-link @(hasUnread ? "text-warning fw-bold notification-active" : "")"
-                               href="/Notifications" id="notificationLink">
+                        @if (userRole != "Administrator")
+                        {
+                            var unreadCount = await NotificationService.GetUnreadCount(userId);
+                            var hasUnread = unreadCount > 0;
 
-                                <i class="fas fa-bell fa-lg @(hasUnread ? "bell-shake" : "")"></i>
+                            <li class="nav-item position-relative mx-2">
+                                <a class="nav-link @(hasUnread ? "text-warning fw-bold notification-active" : "")"
+                                   href="/Notifications" id="notificationLink">
 
-                                <span class="d-lg-none ms-2">Уведомления</span>
+                                    <i class="fas fa-bell fa-lg @(hasUnread ? "bell-shake" : "")"></i>
 
-                                @if (hasUnread)
-                                {
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                          style="font-size: 0.65rem; margin-top: 10px; margin-left: -5px;" id="notificationBadge">
-                                        @unreadCount
-                                    </span>
-                                }
-                            </a>
-                        </li>
+                                    <span class="d-lg-none ms-2">Уведомления</span>
+
+                                    @if (hasUnread)
+                                    {
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                              style="font-size: 0.65rem; margin-top: 10px; margin-left: -5px;" id="notificationBadge">
+                                            @unreadCount
+                                        </span>
+                                    }
+                                </a>
+                            </li>
+                        }
 
                         <li class="nav-item">
                             <a class="nav-link" href="/Auth/Logout"><i class="fas fa-sign-out-alt me-1"></i>Выход</a>
@@ -137,7 +142,7 @@
         </div>
     </nav>
 
-    <main role="main" class="container mt-5 pt-4 flex-grow-1">
+    <main role="main" class="container mt-5 pt-4 flex-grow-1 mb-5">
         @if (ViewBag.Message != null)
         {
             <div class="alert alert-info alert-dismissible fade show" role="alert">

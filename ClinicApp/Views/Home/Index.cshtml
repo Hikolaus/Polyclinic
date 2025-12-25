@@ -36,11 +36,17 @@
                     <div class="card-body">
                         <h5 class="card-title">Добро пожаловать, @Context.Session.GetString("UserName")!</h5>
                         <p class="card-text">Вы вошли в систему как: <strong>@Context.Session.GetString("UserRole")</strong></p>
+
                         @{
-                            var dashboardAction = Context.Session.GetString("UserRole") == "Patient" ? "Dashboard" : "Dashboard";
-                            var dashboardController = Context.Session.GetString("UserRole") == "Patient" ? "Patient" : "Doctor";
+                            var role = Context.Session.GetString("UserRole");
+                            string dashboardController = "Home";
+
+                            if (role == "Patient") dashboardController = "Patient";
+                            else if (role == "Doctor") dashboardController = "Doctor";
+                            else if (role == "Administrator") dashboardController = "Admin";
                         }
-                        <a href="@Url.Action(dashboardAction, dashboardController)" class="btn btn-primary btn-lg">
+
+                        <a href="@Url.Action("Dashboard", dashboardController)" class="btn btn-primary btn-lg">
                             Перейти в панель управления
                         </a>
                     </div>

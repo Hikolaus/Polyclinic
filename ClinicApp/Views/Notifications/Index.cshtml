@@ -11,27 +11,60 @@
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-bell text-warning me-2"></i>Уведомления</h2>
+        <h2><i class="fas fa-bell text-warning me-2"></i>Центр уведомлений</h2>
+        @if (unread.Any())
+        {
+            <form asp-action="MarkAllAsRead" method="post">
+                <button class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-check-double me-1"></i> Прочитать все
+                </button>
+            </form>
+        }
     </div>
 
-    <div id="unreadContainer" class="mb-4">
-        <h5 class="text-primary fw-bold mb-3">
-            Новые <span class="badge bg-danger rounded-pill" id="unreadCounter">@unread.Count</span>
+    <div id="unreadContainer" class="mb-5">
+        <h5 class="text-primary fw-bold mb-3 border-bottom pb-2">
+            Новые <span class="badge bg-danger rounded-pill ms-2" id="unreadCounter">@unread.Count</span>
         </h5>
 
         @if (unread.Any())
         {
             foreach (var n in unread)
             {
-                <div class="card mb-2 border-primary shadow-sm notification-card" id="notif-@n.Id">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title fw-bold text-primary mb-1">@n.Title</h6>
-                            <p class="card-text mb-0">@n.Message</p>
-                            <small class="text-muted">@n.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                var prettyMessage = CleanMessage(n.Message);
+                var prettyTitle = CleanTitle(n.Title, n.Message);
+
+                <div class="card mb-3 border-start border-4 border-primary shadow-sm notification-card" id="notif-@n.Id">
+                    <div class="card-body d-flex justify-content-between align-items-start">
+                        <div class="d-flex">
+                            <div class="me-3 mt-1">
+                                @if (n.Type == ClinicApp.Models.Core.NotificationType.Appointment)
+                                {
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                }
+                                else if (n.Type == ClinicApp.Models.Core.NotificationType.Prescription)
+                                {
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-pills"></i>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-info"></i>
+                                    </div>
+                                }
+                            </div>
+                            <div>
+                                <h6 class="card-title fw-bold text-dark mb-1">@prettyTitle</h6>
+                                <p class="card-text text-secondary mb-1">@prettyMessage</p>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i>@n.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                            </div>
                         </div>
-                        <button class="btn btn-sm btn-success ms-3" onclick="markRead(@n.Id, this)" title="Отметить прочитанным">
-                            <i class="fas fa-check"></i>
+                        <button class="btn btn-link text-success p-0 ms-3" onclick="markRead(@n.Id, this)" title="Отметить прочитанным" style="font-size: 1.2rem;">
+                            <i class="far fa-check-circle"></i>
                         </button>
                     </div>
                 </div>
@@ -39,33 +72,80 @@
         }
         else
         {
-            <div class="alert alert-light text-center text-muted">Новых уведомлений нет</div>
+            <div class="alert alert-light text-center text-muted border border-dashed">
+                <i class="fas fa-check-circle me-2 text-success"></i> У вас нет непрочитанных уведомлений
+            </div>
         }
     </div>
 
-    <div id="readContainer" class="history-container mt-5">
-        <h5 class="text-secondary fw-bold mb-3 border-bottom pb-2">История</h5>
+    <div class="mt-4">
+        <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#historyCollapse" aria-expanded="false" aria-controls="historyCollapse">
+            <i class="fas fa-history me-2"></i> Показать/Скрыть историю уведомлений
+        </button>
 
-        @if (read.Any())
-        {
-            foreach (var n in read)
-            {
-                <div class="card mb-2 bg-light border-0 notification-card is-read">
-                    <div class="card-body">
-                        <h6 class="card-title fw-bold text-dark mb-1">@n.Title</h6>
-                        <p class="card-text text-muted mb-0">@n.Message</p>
-                        <small class="text-muted">@n.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
-                    </div>
-                </div>
-            }
-        }
-        else
-        {
-            <p class="text-muted text-center">История уведомлений пуста.</p>
-        }
+        <div class="collapse mt-3" id="historyCollapse">
+            <div id="readContainer" class="history-container p-3 bg-light rounded border">
+                @if (read.Any())
+                {
+                    foreach (var n in read)
+                    {
+                        var prettyMessage = CleanMessage(n.Message);
+                        var prettyTitle = CleanTitle(n.Title, n.Message);
+
+                        <div class="card mb-2 bg-white border-0 notification-card is-read shadow-sm">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title fw-bold text-dark mb-0 fs-6">@prettyTitle</h6>
+                                        <p class="card-text text-muted mb-0 small">@prettyMessage</p>
+                                    </div>
+                                    <small class="text-muted text-nowrap ms-2" style="font-size: 0.75rem;">
+                                        @n.CreatedAt.ToString("dd.MM HH:mm")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted text-center small mb-0">История уведомлений пуста.</p>
+                }
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script src="~/js/notifications.js"></script>
+}
+
+@functions {
+    public string CleanMessage(string msg)
+    {
+        if (string.IsNullOrEmpty(msg)) return "";
+
+        msg = msg.Replace("InProgress", "начался (идет прием)")
+                 .Replace("Scheduled", "запланирована")
+                 .Replace("Completed", "завершен")
+                 .Replace("Cancelled", "отменена")
+                 .Replace("Confirmed", "подтверждена")
+                 .Replace("NoShow", "не состоялась (неявка)");
+
+        msg = msg.Replace("Статус записи к изменен на", "Статус вашей записи изменился на:");
+        msg = msg.Replace("Статус записи изменен на", "Статус вашей записи:");
+
+        return msg;
+    }
+
+    public string CleanTitle(string title, string msg)
+    {
+        if (title == "Статус изменен" || title == "Изменение статуса приема")
+        {
+            if (msg.Contains("InProgress") || msg.Contains("начался")) return "Прием начался";
+            if (msg.Contains("Completed") || msg.Contains("завершен")) return "Прием завершен";
+            if (msg.Contains("Cancelled") || msg.Contains("отменена")) return "Запись отменена";
+        }
+        return title;
+    }
 }

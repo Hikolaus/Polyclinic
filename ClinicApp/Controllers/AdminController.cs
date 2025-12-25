@@ -20,16 +20,23 @@ namespace ClinicApp.Controllers
         {
             if (!IsAdmin()) return View("NotAuthorized");
             var stats = await _adminService.GetDashboardStats();
-            foreach (var kvp in stats) ViewBag.Data[kvp.Key] = kvp.Value;
 
-            ViewBag.TotalPatients = stats["TotalPatients"];
-            ViewBag.TotalDoctors = stats["TotalDoctors"];
-            ViewBag.TotalAppointments = stats["TotalAppointments"];
-            ViewBag.Dates = stats["ChartDates"];
-            ViewBag.DateCounts = stats["ChartCounts"];
-            ViewBag.DiagLabels = stats["DiagLabels"];
-            ViewBag.DiagData = stats["DiagData"];
-            ViewBag.AgeData = stats["AgeData"];
+            foreach (var kvp in stats)
+            {
+                ViewData[kvp.Key] = kvp.Value;
+            }
+
+            if (stats.ContainsKey("TotalPatients")) ViewBag.TotalPatients = stats["TotalPatients"];
+            if (stats.ContainsKey("TotalDoctors")) ViewBag.TotalDoctors = stats["TotalDoctors"];
+            if (stats.ContainsKey("TotalAppointments")) ViewBag.TotalAppointments = stats["TotalAppointments"];
+
+            if (stats.ContainsKey("ChartDates")) ViewBag.Dates = stats["ChartDates"];
+            if (stats.ContainsKey("ChartCounts")) ViewBag.DateCounts = stats["ChartCounts"];
+
+            if (stats.ContainsKey("DiagLabels")) ViewBag.DiagLabels = stats["DiagLabels"];
+            if (stats.ContainsKey("DiagData")) ViewBag.DiagData = stats["DiagData"];
+
+            if (stats.ContainsKey("AgeData")) ViewBag.AgeData = stats["AgeData"];
 
             return View();
         }

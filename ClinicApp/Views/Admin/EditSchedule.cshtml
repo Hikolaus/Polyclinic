@@ -157,6 +157,7 @@
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-primary me-1 edit-btn"
                                             data-id="@s.Id"
+                                            data-doctorid="@s.DoctorId"
                                             data-day="@s.DayOfWeek"
                                             data-start="@s.StartTime.ToString(@"hh\:mm")"
                                             data-end="@s.EndTime.ToString(@"hh\:mm")"
@@ -203,6 +204,7 @@
             <form action="/Admin/UpdateSchedule" method="post">
                 <div class="modal-body">
                     <input type="hidden" name="Id" id="editId" />
+                    <input type="hidden" name="DoctorId" id="editDoctorId" />
 
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -236,7 +238,12 @@
                         </div>
 
                         <div class="col-12 mt-3">
-                            <h6 class="border-bottom pb-2 text-muted">Перерыв</h6>
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                                <h6 class="mb-0 text-muted">Перерыв</h6>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearBreak()">
+                                    <i class="fas fa-eraser"></i> Очистить
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Начало перерыва</label>
@@ -258,6 +265,11 @@
 </div>
 
 <script>
+    function clearBreak() {
+        document.getElementById('editBreakStart').value = '';
+        document.getElementById('editBreakEnd').value = '';
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var editModal = document.getElementById('editModal');
         editModal.addEventListener('show.bs.modal', function (event) {
@@ -265,6 +277,7 @@
             var button = event.relatedTarget;
 
             var id = button.getAttribute('data-id');
+            var doctorId = button.getAttribute('data-doctorid');
             var day = button.getAttribute('data-day');
             var start = button.getAttribute('data-start');
             var end = button.getAttribute('data-end');
@@ -274,12 +287,15 @@
             var max = button.getAttribute('data-max');
 
             document.getElementById('editId').value = id;
+            document.getElementById('editDoctorId').value = doctorId;
             document.getElementById('editDay').value = day;
             document.getElementById('editStart').value = start;
             document.getElementById('editEnd').value = end;
             document.getElementById('editSlot').value = slot;
+
             document.getElementById('editBreakStart').value = bStart;
             document.getElementById('editBreakEnd').value = bEnd;
+
             document.getElementById('editMax').value = max;
         });
     });

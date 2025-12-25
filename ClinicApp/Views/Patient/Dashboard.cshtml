@@ -17,19 +17,32 @@
             </div>
             <div class="card-body">
                 <p class="card-text mb-1"><small class="text-muted">ФИО:</small><br><strong>@Model.FullName</strong></p>
-                <p class="card-text mb-1"><small class="text-muted">Полис:</small><br><strong>@Model.PolicyNumber</strong></p>
+                <p class="card-text mb-1"><small class="text-muted">Полис ОМС:</small><br><strong>@Model.PolicyNumber</strong></p>
                 <p class="card-text mb-1"><small class="text-muted">Дата рождения:</small><br>@Model.DateOfBirth.ToString("dd.MM.yyyy")</p>
-                <p class="card-text mb-1"><small class="text-muted">Телефон:</small><br>@Model.Phone</p>
 
-                <hr>
-                <a href="@Url.Action("MyAppointments", "Patient")" class="btn btn-primary w-100">
-                    <i class="fas fa-list me-1"></i> Мои записи
-                </a>
+                <hr class="my-2">
+
+                <p class="card-text mb-1">
+                    <small class="text-muted">Телефон:</small><br>
+                    @(string.IsNullOrEmpty(Model.User?.Phone) ? "-" : Model.User.Phone)
+                </p>
+                <p class="card-text mb-0">
+                    <small class="text-muted">Адрес:</small><br>
+                    @(string.IsNullOrEmpty(Model.Address) ? "-" : Model.Address)
+                </p>
             </div>
         </div>
     </div>
 
     <div class="col-md-8">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
         <h4><i class="fas fa-calendar-alt me-2"></i>Ближайшие записи</h4>
 
         @if (recentAppointments != null && recentAppointments.Count > 0)
@@ -62,6 +75,9 @@
                                             break;
                                         case ClinicApp.Models.Core.AppointmentStatus.Confirmed:
                                             <span class="badge bg-success">Подтверждено</span>
+                                            break;
+                                        case ClinicApp.Models.Core.AppointmentStatus.InProgress:
+                                            <span class="badge bg-warning text-dark">Идет прием</span>
                                             break;
                                         case ClinicApp.Models.Core.AppointmentStatus.Completed:
                                             <span class="badge bg-secondary">Завершено</span>
@@ -101,8 +117,12 @@
                                 <i class="fas fa-file-medical me-1"></i> Медкарта
                             </a>
 
-                            <a href="@Url.Action("MyAppointments", "Patient")" class="btn btn-outline-secondary">
-                                <i class="fas fa-history me-1"></i> История записей
+                            <a href="/Patient/MyAppointments?tab=upcoming" class="btn btn-outline-success">
+                                <i class="fas fa-calendar-alt me-1"></i> Текущие записи
+                            </a>
+
+                            <a href="/Patient/MyAppointments?tab=history" class="btn btn-outline-secondary">
+                                <i class="fas fa-history me-1"></i> История посещений
                             </a>
                         </div>
                     </div>
@@ -118,8 +138,6 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
     </div>
 </div>

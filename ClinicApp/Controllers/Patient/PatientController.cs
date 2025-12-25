@@ -2,6 +2,7 @@
 using ClinicApp.Services.PatientService;
 using ClinicApp.Services.Core;
 using ClinicApp.Models.Core;
+using ClinicApp.Models.PatientModels;
 
 namespace ClinicApp.Controllers
 {
@@ -27,13 +28,60 @@ namespace ClinicApp.Controllers
             if (p == null) return View("NotAuthorized");
 
             var apps = await _patientService.GetPatientAppointments();
+
             ViewBag.TotalAppointments = apps.Count;
-            ViewBag.UpcomingAppointments = apps.Count(a => a.AppointmentDateTime > DateTime.Now && a.Status != AppointmentStatus.Cancelled);
-            ViewBag.RecentAppointments = apps.Where(a => a.AppointmentDateTime > DateTime.Now && a.Status != AppointmentStatus.Cancelled).OrderBy(a => a.AppointmentDateTime).Take(5).ToList();
+
+            var activeApps = apps.Where(a =>
+                a.AppointmentDateTime.Date >= DateTime.Today &&
+                a.Status != AppointmentStatus.Cancelled &&
+                a.Status != AppointmentStatus.Completed &&
+                a.Status != AppointmentStatus.NoShow
+            ).ToList();
+
+            ViewBag.UpcomingAppointments = activeApps.Count;
+            ViewBag.RecentAppointments = activeApps.OrderBy(a => a.AppointmentDateTime).Take(5).ToList();
+
             return View(p);
         }
 
-        public async Task<IActionResult> MyAppointments() => View(await _patientService.GetPatientAppointments());
+        public async Task<IActionResult> MyAppointments(string tab = "upcoming", DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var allAppointments = await _patientService.GetPatientAppointments();
+
+            if (startDate.HasValue)
+                allAppointments = allAppointments.Where(a => a.AppointmentDateTime.Date >= startDate.Value.Date).ToList();
+            if (endDate.HasValue)
+                allAppointments = allAppointments.Where(a => a.AppointmentDateTime.Date <= endDate.Value.Date).ToList();
+
+            List<Appointment> filteredList;
+
+            if (tab == "history")
+            {
+                filteredList = allAppointments
+                    .Where(a => a.AppointmentDateTime.Date < DateTime.Today ||
+                                a.Status == AppointmentStatus.Completed ||
+                                a.Status == AppointmentStatus.Cancelled ||
+                                a.Status == AppointmentStatus.NoShow)
+                    .OrderByDescending(a => a.AppointmentDateTime)
+                    .ToList();
+            }
+            else
+            {
+                filteredList = allAppointments
+                    .Where(a => a.AppointmentDateTime.Date >= DateTime.Today &&
+                                (a.Status == AppointmentStatus.Scheduled ||
+                                 a.Status == AppointmentStatus.Confirmed ||
+                                 a.Status == AppointmentStatus.InProgress))
+                    .OrderBy(a => a.AppointmentDateTime)
+                    .ToList();
+            }
+
+            ViewBag.CurrentTab = tab;
+            ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
+            ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
+
+            return View(filteredList);
+        }
 
         [HttpGet]
         public async Task<IActionResult> CreateAppointment()
@@ -78,7 +126,7 @@ namespace ClinicApp.Controllers
                 if (await _patientService.CreateAppointment(app))
                 {
                     TempData["Success"] = "Записано";
-                    return RedirectToAction("MyAppointments");
+                    return RedirectToAction("MyAppointments", new { tab = "upcoming" });
                 }
             }
             TempData["Error"] = "Ошибка записи";
@@ -89,9 +137,12 @@ namespace ClinicApp.Controllers
         [HttpPost]
         public async Task<IActionResult> CancelAppointment(int appointmentId)
         {
-            if (await _patientService.CancelAppointment(appointmentId)) TempData["Success"] = "Отменено";
-            else TempData["Error"] = "Ошибка отмены";
-            return RedirectToAction("MyAppointments");
+            if (await _patientService.CancelAppointment(appointmentId))
+                TempData["Success"] = "Отменено";
+            else
+                TempData["Error"] = "Ошибка отмены";
+
+            return RedirectToAction("MyAppointments", new { tab = "upcoming" });
         }
 
         public async Task<IActionResult> MedicalRecords()
