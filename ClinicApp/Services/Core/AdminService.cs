@@ -21,7 +21,6 @@ namespace ClinicApp.Services.Core
             stats["TotalDoctors"] = await _context.Doctors.CountAsync();
             stats["TotalAppointments"] = await _context.Appointments.CountAsync();
 
-            // График посещений
             var twoWeeksAgo = DateTime.Today.AddDays(-13);
             var appointmentsByDate = await _context.Appointments
                 .Where(a => a.AppointmentDateTime >= twoWeeksAgo)
@@ -32,7 +31,6 @@ namespace ClinicApp.Services.Core
             stats["ChartDates"] = appointmentsByDate.Select(x => x.Date.ToString("dd.MM")).ToArray();
             stats["ChartCounts"] = appointmentsByDate.Select(x => x.Count).ToArray();
 
-            // Топ диагнозов
             var topDiagnoses = await _context.MedicalRecords
                 .Include(m => m.DiagnosisRef)
                 .Where(m => m.DiagnosisId != null)
@@ -44,10 +42,9 @@ namespace ClinicApp.Services.Core
             stats["DiagLabels"] = topDiagnoses.Any() ? topDiagnoses.Select(x => x.Name).ToArray() : new[] { "Нет данных" };
             stats["DiagData"] = topDiagnoses.Any() ? topDiagnoses.Select(x => x.Count).ToArray() : new[] { 1 };
 
-            // Возраст
             var birthDates = await _context.Patients.Select(p => p.DateOfBirth).ToListAsync();
             var today = DateTime.Today;
-            int[] ageGroups = new int[4]; // 0-17, 18-35, 36-60, 60+
+            int[] ageGroups = new int[4];
 
             foreach (var dob in birthDates)
             {
@@ -110,7 +107,6 @@ namespace ClinicApp.Services.Core
             }
         }
 
-        // --- Медикаменты ---
         public async Task<List<Medication>> GetMedications(string search)
         {
             var query = _context.Medications.AsQueryable();
@@ -137,7 +133,6 @@ namespace ClinicApp.Services.Core
             catch { return false; }
         }
 
-        // --- Специализации ---
         public async Task<List<Specialization>> GetSpecializations() => await _context.Specializations.ToListAsync();
 
         public async Task AddSpecialization(Specialization spec)
@@ -170,7 +165,6 @@ namespace ClinicApp.Services.Core
             catch { return false; }
         }
 
-        // --- Диагнозы ---
         public async Task<List<Diagnosis>> GetDiagnoses(string search)
         {
             var query = _context.Diagnoses.AsQueryable();
@@ -212,7 +206,6 @@ namespace ClinicApp.Services.Core
             catch { return false; }
         }
 
-        // --- Расписание ---
         public async Task<List<Doctor>> GetDoctorsWithSchedules()
         {
             return await _context.Doctors.Include(d => d.User).Include(d => d.Specialization).Include(d => d.Schedules).Where(d => d.User.IsActive).OrderBy(d => d.User.FullName).ToListAsync();
@@ -220,7 +213,11 @@ namespace ClinicApp.Services.Core
 
         public async Task<Doctor?> GetDoctorWithSchedule(int doctorId)
         {
-            return await _context.Doctors.Include(d => d.User).Include(d => d.Specialization).FirstOrDefaultAsync(d => d.Id == doctorId);
+            return await _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Specialization)
+                .Include(d => d.Schedules)
+                .FirstOrDefaultAsync(d => d.Id == doctorId);
         }
 
         public async Task AddSchedule(Schedule schedule)

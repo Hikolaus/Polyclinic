@@ -35,7 +35,7 @@ namespace ClinicApp.Services.Core
                 var currentTime = date.Date.Add(schedule.StartTime);
                 var endTime = date.Date.Add(schedule.EndTime);
 
-                while (currentTime < endTime)
+                while (currentTime.AddMinutes(schedule.SlotDurationMinutes) <= endTime)
                 {
                     var slotEndTime = currentTime.AddMinutes(schedule.SlotDurationMinutes);
 
@@ -43,7 +43,7 @@ namespace ClinicApp.Services.Core
                                  currentTime.TimeOfDay >= schedule.BreakStart.Value &&
                                  slotEndTime.TimeOfDay <= schedule.BreakEnd.Value;
 
-                    if (!isBreak && slotEndTime <= endTime)
+                    if (!isBreak)
                     {
                         var isBooked = await _context.Appointments
                             .AnyAsync(a => a.DoctorId == doctorId &&
@@ -70,35 +70,48 @@ namespace ClinicApp.Services.Core
 
         public async Task<bool> IsTimeSlotAvailable(int doctorId, DateTime dateTime)
         {
+            dateTime = dateTime.AddSeconds(-dateTime.Second).AddMilliseconds(-dateTime.Millisecond);
+
             var dayOfWeek = (int)dateTime.DayOfWeek;
             if (dayOfWeek == 0) dayOfWeek = 7;
 
-            var schedule = await _context.Schedules
-                .FirstOrDefaultAsync(s => s.DoctorId == doctorId &&
-                                        s.DayOfWeek == dayOfWeek &&
-                                        s.IsActive);
+            var schedules = await _context.Schedules
+                .Where(s => s.DoctorId == doctorId &&
+                            s.DayOfWeek == dayOfWeek &&
+                            s.IsActive)
+                .ToListAsync();
 
-            if (schedule == null) return false;
+            if (!schedules.Any()) return false;
 
             var time = dateTime.TimeOfDay;
+            bool isInAnySchedule = false;
 
-            if (time < schedule.StartTime || time >= schedule.EndTime)
-                return false;
+            foreach (var schedule in schedules)
+            {
+                if (time >= schedule.StartTime && time < schedule.EndTime)
+                {
+                    bool isBreak = schedule.BreakStart.HasValue && schedule.BreakEnd.HasValue &&
+                                   time >= schedule.BreakStart.Value && time < schedule.BreakEnd.Value;
 
-            if (schedule.BreakStart.HasValue && schedule.BreakEnd.HasValue &&
-                time >= schedule.BreakStart.Value && time < schedule.BreakEnd.Value)
-                return false;
+                    if (!isBreak)
+                    {
+                        var minutesFromStart = (time - schedule.StartTime).TotalMinutes;
+                        if (minutesFromStart % schedule.SlotDurationMinutes == 0)
+                        {
+                            isInAnySchedule = true;
+                            break;
+                        }
+                    }
+                }
+            }
 
-            var minutes = time.Minutes;
-            if (minutes % schedule.SlotDurationMinutes != 0)
-                return false;
+            if (!isInAnySchedule) return false;
 
             var isBooked = await _context.Appointments
                 .AnyAsync(a => a.DoctorId == doctorId &&
                              a.AppointmentDateTime == dateTime &&
-                             (a.Status == AppointmentStatus.Scheduled ||
-                              a.Status == AppointmentStatus.Confirmed ||
-                              a.Status == AppointmentStatus.InProgress));
+                             (a.Status != AppointmentStatus.Cancelled &&
+                              a.Status != AppointmentStatus.NoShow));
 
             return !isBooked;
         }
@@ -112,7 +125,6 @@ namespace ClinicApp.Services.Core
                 .ToListAsync();
         }
 
-
         public async Task<List<object>> GetMonthAvailability(int doctorId, int year, int month)
         {
             var schedules = await _context.Schedules.Where(s => s.DoctorId == doctorId && s.IsActive).ToListAsync();
@@ -122,33 +134,46 @@ namespace ClinicApp.Services.Core
             var endDate = startDate.AddMonths(1);
 
             var appointments = await _context.Appointments
-                .Where(a => a.DoctorId == doctorId && a.AppointmentDateTime >= startDate && a.AppointmentDateTime < endDate
-                && (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed))
+                .Where(a => a.DoctorId == doctorId &&
+                       a.AppointmentDateTime >= startDate &&
+                       a.AppointmentDateTime < endDate &&
+                       (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed))
                 .ToListAsync();
 
             var result = new List<object>();
             var maxDate = DateTime.Today.AddDays(14);
+
             int daysInMonth = DateTime.DaysInMonth(year, month);
 
             for (int day = 1; day <= daysInMonth; day++)
             {
                 var date = new DateTime(year, month, day);
+
                 if (date.Date < DateTime.Today || date.Date > maxDate) continue;
 
                 int dayOfWeek = (int)date.DayOfWeek == 0 ? 7 : (int)date.DayOfWeek;
-                var schedule = schedules.FirstOrDefault(s => s.DayOfWeek == dayOfWeek);
 
-                if (schedule != null)
+                var dailySchedules = schedules.Where(s => s.DayOfWeek == dayOfWeek).ToList();
+
+                if (dailySchedules.Any())
                 {
-                    double totalMinutes = (schedule.EndTime - schedule.StartTime).TotalMinutes;
-                    if (schedule.BreakStart.HasValue && schedule.BreakEnd.HasValue)
-                        totalMinutes -= (schedule.BreakEnd.Value - schedule.BreakStart.Value).TotalMinutes;
+                    int totalCapacity = 0;
 
-                    int capacity = (int)(totalMinutes / schedule.SlotDurationMinutes);
-                    if (schedule.MaxPatients > 0) capacity = Math.Min(capacity, schedule.MaxPatients);
+                    foreach (var sch in dailySchedules)
+                    {
+                        double totalMinutes = (sch.EndTime - sch.StartTime).TotalMinutes;
+                        if (sch.BreakStart.HasValue && sch.BreakEnd.HasValue)
+                            totalMinutes -= (sch.BreakEnd.Value - sch.BreakStart.Value).TotalMinutes;
+
+                        int cap = (int)(totalMinutes / sch.SlotDurationMinutes);
+                        if (sch.MaxPatients > 0) cap = Math.Min(cap, sch.MaxPatients);
+
+                        totalCapacity += cap;
+                    }
 
                     int booked = appointments.Count(a => a.AppointmentDateTime.Date == date.Date);
-                    result.Add(new { day, fullDate = date.ToString("yyyy-MM-dd"), available = true, isFull = booked >= capacity });
+
+                    result.Add(new { day, fullDate = date.ToString("yyyy-MM-dd"), available = true, isFull = booked >= totalCapacity });
                 }
             }
             return result;

@@ -105,8 +105,13 @@ namespace ClinicApp.Services.DoctorService
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.MedicalRecords)
                         .ThenInclude(mr => mr.Appointment)
-                            .ThenInclude(mra => mra.Doctor)
+                            .ThenInclude(app => app.Doctor)
                                 .ThenInclude(d => d.Specialization)
+                .Include(a => a.Patient)
+                    .ThenInclude(p => p.MedicalRecords)
+                        .ThenInclude(mr => mr.Appointment)
+                            .ThenInclude(app => app.Prescriptions)
+                                .ThenInclude(pr => pr.Medication)
                 .FirstOrDefaultAsync(a => a.Id == appointmentId);
         }
 
@@ -175,24 +180,26 @@ namespace ClinicApp.Services.DoctorService
                 };
                 _context.MedicalRecords.Add(record);
 
-                var allMeds = (model.Meds ?? new List<PrescriptionItem>()).Concat(model.Recipes ?? new List<PrescriptionItem>());
+                await _context.SaveChangesAsync();
+
+                var allMeds = (model.Meds ?? new List<PrescriptionItem>())
+                              .Concat(model.Recipes ?? new List<PrescriptionItem>())
+                              .Where(m => m.MedicationId > 0);
+
                 foreach (var item in allMeds)
                 {
-                    if (item.MedicationId > 0)
+                    _context.Prescriptions.Add(new Prescription
                     {
-                        _context.Prescriptions.Add(new Prescription
-                        {
-                            PatientId = appointment.PatientId,
-                            DoctorId = appointment.DoctorId,
-                            AppointmentId = model.AppointmentId,
-                            MedicationId = item.MedicationId,
-                            Dosage = item.Dosage,
-                            Instructions = item.Instructions,
-                            IssueDate = DateTime.Now,
-                            ExpiryDate = DateTime.Now.AddMonths(1),
-                            Status = PrescriptionStatus.Active
-                        });
-                    }
+                        PatientId = appointment.PatientId,
+                        DoctorId = appointment.DoctorId,
+                        AppointmentId = model.AppointmentId,
+                        MedicationId = item.MedicationId,
+                        Dosage = item.Dosage,
+                        Instructions = item.Instructions,
+                        IssueDate = DateTime.Now,
+                        ExpiryDate = DateTime.Now.AddMonths(1),
+                        Status = PrescriptionStatus.Active
+                    });
                 }
 
                 appointment.Status = AppointmentStatus.Completed;

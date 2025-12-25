@@ -24,7 +24,10 @@ namespace ClinicApp.Services.PatientService
         {
             var currentUser = _authService.GetCurrentUser();
             if (currentUser == null) return null;
-            return await _context.Patients.FirstOrDefaultAsync(p => p.Id == currentUser.Id);
+
+            return await _context.Patients
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.Id == currentUser.Id);
         }
 
         public async Task<List<Appointment>> GetPatientAppointments()
@@ -46,6 +49,10 @@ namespace ClinicApp.Services.PatientService
             {
                 var patient = await GetCurrentPatient();
                 if (patient == null) return false;
+
+                appointment.AppointmentDateTime = appointment.AppointmentDateTime
+                    .AddSeconds(-appointment.AppointmentDateTime.Second)
+                    .AddMilliseconds(-appointment.AppointmentDateTime.Millisecond);
 
                 bool isAvailable = await _scheduleService.IsTimeSlotAvailable(appointment.DoctorId, appointment.AppointmentDateTime);
                 if (!isAvailable) return false;
@@ -96,14 +103,13 @@ namespace ClinicApp.Services.PatientService
                         var notification = new Notification
                         {
                             UserId = waiter.PatientId,
-                            Title = "Свободное окно!",
-                            Message = $"У врача {appointment.Doctor?.User?.FullName} освободилось время: {appointment.AppointmentDateTime:dd.MM.yyyy HH:mm}. Успейте записаться!",
+                            Title = "Появилось свободное время",
+                            Message = $"У врача {appointment.Doctor?.User?.FullName} освободилось окно: {appointment.AppointmentDateTime:dd.MM HH:mm}. Успейте записаться!",
                             Type = NotificationType.System,
                             CreatedAt = DateTime.Now,
                             IsRead = false
                         };
                         _context.Notifications.Add(notification);
-
                         waiter.IsNotified = true;
                     }
                 }
@@ -117,6 +123,7 @@ namespace ClinicApp.Services.PatientService
                 return false;
             }
         }
+
         public async Task<bool> JoinWaitlist(int doctorId)
         {
             var patient = await GetCurrentPatient();
