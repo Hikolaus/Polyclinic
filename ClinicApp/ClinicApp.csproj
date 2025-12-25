@@ -40,6 +40,7 @@
 	<ItemGroup>
 	  <Compile Remove="Views\Admin\Dashboard.cshtml.cs" />
 	  <Compile Remove="Views\Admin\Diagnoses.cshtml.cs" />
+	  <Compile Remove="Views\Admin\Schedules.cshtml.cs" />
 	  <Compile Remove="Views\Admin\Users.cshtml.cs" />
 	  <Compile Remove="Views\Auth\Login.cshtml.cs" />
 	  <Compile Remove="Views\Auth\Register.cshtml.cs" />
