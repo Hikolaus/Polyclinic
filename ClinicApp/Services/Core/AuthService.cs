@@ -1,5 +1,4 @@
-﻿using BCrypt.Net;
-using ClinicApp.Data;
+﻿using ClinicApp.Data;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.PatientModels;
 using Microsoft.AspNetCore.Http;
@@ -25,21 +24,12 @@ namespace ClinicApp.Services.Core
 
             if (user == null) return null;
 
-            try
+            if (user.PasswordHash == password)
             {
-                if (user.PasswordHash.StartsWith("$2a$") || user.PasswordHash.StartsWith("$2b$"))
-                {
-                    return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash) ? user : null;
-                }
-                else
-                {
-                    return user.PasswordHash == password ? user : null;
-                }
+                return user;
             }
-            catch
-            {
-                return user.PasswordHash == password ? user : null;
-            }
+
+            return null;
         }
 
         public async Task<bool> Register(User user)
