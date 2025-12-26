@@ -1,14 +1,13 @@
 ﻿using NUnit.Framework;
-using Moq;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using ClinicApp.Controllers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using ClinicApp.Data;
 using ClinicApp.Services.Core;
 using ClinicApp.Models.Core;
-using System.Text;
+using ClinicApp.Models.DoctorModels;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ClinicApp.Tests
@@ -16,72 +15,62 @@ namespace ClinicApp.Tests
     [TestFixture]
     public class AdminTests
     {
-        private Mock<IAdminService> _adminServiceMock;
-        private AdminController _controller;
-        private Mock<ISession> _sessionMock;
+        private ClinicContext _context;
+        private AdminService _adminService;
 
         [SetUp]
         public void Setup()
         {
-            _adminServiceMock = new Mock<IAdminService>();
-            _controller = new AdminController(_adminServiceMock.Object);
+            var options = new DbContextOptionsBuilder<ClinicContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
 
-            _sessionMock = new Mock<ISession>();
-            var httpContext = new DefaultHttpContext();
-            httpContext.Session = _sessionMock.Object;
-            _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
-
-            _controller.TempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>());
-
-            _controller.ViewData = new ViewDataDictionary(
-                new EmptyModelMetadataProvider(),
-                new ModelStateDictionary());
+            _context = new ClinicContext(options);
+            _adminService = new AdminService(_context);
         }
 
         [TearDown]
         public void TearDown()
         {
-            _controller?.Dispose();
-        }
-
-        private void SetupSessionRole(string role)
-        {
-            byte[] val = Encoding.UTF8.GetBytes(role);
-            _sessionMock.Setup(s => s.TryGetValue("UserRole", out val)).Returns(true);
+            _context.Dispose();
         }
 
         [Test]
-        public async Task Dashboard_Authorized_PopulatesViewBag()
+        public async Task GenerateBulkSchedule_CreatesSlotsCorrectly()
         {
-            SetupSessionRole("Administrator");
-            var stats = new Dictionary<string, object>
-            {
-                { "TotalPatients", 100 },
-                { "TotalDoctors", 5 },
-                { "TotalAppointments", 50 },
-                { "ChartDates", new string[]{} },
-                { "ChartCounts", new int[]{} }
-            };
+            var doctor = new Doctor { Id = 1, SpecializationId = 1, LicenseNumber = "123" };
+            _context.Doctors.Add(doctor);
+            await _context.SaveChangesAsync();
 
-            _adminServiceMock.Setup(s => s.GetDashboardStats()).ReturnsAsync(stats);
+            var days = new List<int> { 1, 2 };
+            var start = new TimeSpan(9, 0, 0);
+            var end = new TimeSpan(12, 0, 0);
+            int duration = 30;
 
-            var result = await _controller.Dashboard() as ViewResult;
+            await _adminService.GenerateBulkSchedule(1, days, start, end, duration);
 
-            Assert.IsNotNull(result);
-            Assert.AreEqual(100, _controller.ViewBag.TotalPatients);
-            Assert.AreEqual(5, _controller.ViewBag.TotalDoctors);
+            var schedules = await _context.Schedules.ToListAsync();
+
+            Assert.AreEqual(2, schedules.Count, "Должно создаться 2 записи расписания (Пн и Вт)");
+            Assert.AreEqual(1, schedules[0].DoctorId);
+            Assert.AreEqual(30, schedules[0].SlotDurationMinutes);
         }
 
         [Test]
-        public async Task AddMedication_Valid_Redirects()
+        public async Task GenerateBulkSchedule_SkipExistingDays()
         {
-            SetupSessionRole("Administrator");
-            var med = new Medication { Name = "Analgin" };
+            var doctor = new Doctor { Id = 1, SpecializationId = 1, LicenseNumber = "123" };
+            _context.Doctors.Add(doctor);
+            _context.Schedules.Add(new Schedule { DoctorId = 1, DayOfWeek = 1, StartTime = TimeSpan.Zero, EndTime = TimeSpan.Zero, IsActive = true });
+            await _context.SaveChangesAsync();
 
-            var result = await _controller.AddMedication(med) as RedirectToActionResult;
+            var days = new List<int> { 1, 2 };
 
-            Assert.AreEqual("Medications", result?.ActionName);
-            _adminServiceMock.Verify(s => s.AddMedication(med), Times.Once);
+            await _adminService.GenerateBulkSchedule(1, days, new TimeSpan(9, 0, 0), new TimeSpan(17, 0, 0), 15);
+
+            var count = await _context.Schedules.CountAsync();
+            Assert.AreEqual(2, count, "Должно быть 2 записи: 1 старая (Пн) + 1 новая (Вт). Пн не должен дублироваться.");
         }
     }
 }

@@ -1,83 +1,86 @@
 ﻿using NUnit.Framework;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Moq;
-using Microsoft.AspNetCore.Mvc;
-using ClinicApp.Controllers;
+using Microsoft.AspNetCore.Http;
+using ClinicApp.Data;
 using ClinicApp.Services.Core;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.PatientModels;
+using System;
+using System.Threading.Tasks;
 
 namespace ClinicApp.Tests
 {
     [TestFixture]
     public class AuthTests
     {
-        private Mock<IAuthService> _authServiceMock;
-        private AuthController _controller;
+        private ClinicContext _context;
+        private AuthService _authService;
+        private Mock<IHttpContextAccessor> _httpContextAccessorMock;
 
         [SetUp]
         public void Setup()
         {
-            _authServiceMock = new Mock<IAuthService>();
-            _controller = new AuthController(_authServiceMock.Object);
+            var options = new DbContextOptionsBuilder<ClinicContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+
+                .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+
+            _context = new ClinicContext(options);
+            _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+
+            _authService = new AuthService(_context, _httpContextAccessorMock.Object);
         }
 
         [TearDown]
         public void TearDown()
         {
-            _controller?.Dispose();
+            _context.Dispose();
         }
 
         [Test]
-        public async Task Login_ValidCredentials_RedirectsToPatientDashboard()
+        public async Task RegisterPatient_SavesUserAndPatientToDb()
         {
-            var user = new User { Id = 1, Login = "test", Role = "Patient" };
-            _authServiceMock.Setup(s => s.Authenticate("test", "password")).ReturnsAsync(user);
+            var user = new User { Login = "new_pat", PasswordHash = "123", Role = "Patient", FullName = "Test" };
+            var patient = new Patient { PolicyNumber = "OMS123", DateOfBirth = DateTime.Now, Gender = "Male" };
 
-            var result = await _controller.Login("test", "password") as RedirectToActionResult;
+            bool result = await _authService.RegisterPatient(user, patient);
 
-            Assert.IsNotNull(result);
-            Assert.AreEqual("Dashboard", result.ActionName);
-            Assert.AreEqual("Patient", result.ControllerName);
-            _authServiceMock.Verify(s => s.Login(user), Times.Once);
+            Assert.IsTrue(result);
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Login == "new_pat");
+            var dbPatient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == dbUser.Id);
+
+            Assert.IsNotNull(dbUser, "Пользователь должен быть в таблице Users");
+            Assert.IsNotNull(dbPatient, "Пациент должен быть в таблице Patients");
+            Assert.AreEqual("OMS123", dbPatient.PolicyNumber);
         }
 
         [Test]
-        public async Task Login_InvalidCredentials_ReturnsViewWithError()
+        public async Task Authenticate_ValidCredentials_ReturnsUser()
         {
-            _authServiceMock.Setup(s => s.Authenticate(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync((User?)null);
+            var user = new User { Login = "user1", PasswordHash = "pass1", Role = "Patient", FullName = "User", IsActive = true };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
-            var result = await _controller.Login("wrong", "pass") as ViewResult;
+            var result = await _authService.Authenticate("user1", "pass1");
 
             Assert.IsNotNull(result);
-            Assert.IsTrue(_controller.ViewBag.Error == "Неверный логин или пароль");
+            Assert.AreEqual("user1", result.Login);
         }
 
         [Test]
-        public async Task Register_PasswordsDoNotMatch_ReturnsViewWithError()
+        public async Task Authenticate_InvalidPassword_ReturnsNull()
         {
-            var result = await _controller.Register(
-                "login", "pass", "DIFFERENT_PASS",
-                "Name", "email", "phone", "policy", DateTime.Now, "Male", "Address"
-            ) as ViewResult;
+            var user = new User { Login = "user1", PasswordHash = "pass1", Role = "Patient", FullName = "User", IsActive = true };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
-            Assert.IsNotNull(result);
-            Assert.IsTrue(_controller.ViewBag.Error == "Пароли не совпадают");
-        }
+            var result = await _authService.Authenticate("user1", "wrong_pass");
 
-        [Test]
-        public async Task Register_ValidData_RedirectsToDashboard()
-        {
-            _authServiceMock.Setup(s => s.RegisterPatient(It.IsAny<User>(), It.IsAny<Patient>()))
-                .ReturnsAsync(true);
-
-            var result = await _controller.Register(
-                "login", "pass", "pass",
-                "Name", "email", "phone", "policy", DateTime.Now, "Male", "Address"
-            ) as RedirectToActionResult;
-
-            Assert.IsNotNull(result);
-            Assert.AreEqual("Dashboard", result.ActionName);
+            Assert.IsNull(result);
         }
     }
 }
