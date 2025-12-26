@@ -4,6 +4,7 @@ using ClinicApp.Models.DoctorModels;
 using ClinicApp.Models.PatientModels;
 using ClinicApp.Services.Core;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace ClinicApp.Services.PatientService
 {
@@ -12,12 +13,14 @@ namespace ClinicApp.Services.PatientService
         private readonly ClinicContext _context;
         private readonly IAuthService _authService;
         private readonly IScheduleService _scheduleService;
+        private readonly INotificationService _notificationService;
 
-        public PatientService(ClinicContext context, IAuthService authService, IScheduleService scheduleService)
+        public PatientService(ClinicContext context, IAuthService authService, IScheduleService scheduleService, INotificationService notificationService)
         {
             _context = context;
             _authService = authService;
             _scheduleService = scheduleService;
+            _notificationService = notificationService;
         }
 
         public async Task<Patient?> GetCurrentPatient()
@@ -30,21 +33,24 @@ namespace ClinicApp.Services.PatientService
                 .FirstOrDefaultAsync(p => p.Id == currentUser.Id);
         }
 
-        public async Task<List<Appointment>> GetPatientAppointments()
+        public async Task<List<Appointment>> GetPatientAppointments(int patientId, DateTime? start = null, DateTime? end = null, AppointmentStatus[]? statuses = null)
         {
-            var patient = await GetCurrentPatient();
-            if (patient == null) return new List<Appointment>();
-
-            return await _context.Appointments
+            var query = _context.Appointments
                 .Include(a => a.Doctor).ThenInclude(d => d.User)
                 .Include(a => a.Doctor.Specialization)
-                .Where(a => a.PatientId == patient.Id)
-                .OrderByDescending(a => a.AppointmentDateTime)
-                .ToListAsync();
+                .Where(a => a.PatientId == patientId)
+                .AsQueryable();
+
+            if (start.HasValue) query = query.Where(a => a.AppointmentDateTime >= start.Value);
+            if (end.HasValue) query = query.Where(a => a.AppointmentDateTime <= end.Value);
+            if (statuses != null && statuses.Length > 0) query = query.Where(a => statuses.Contains(a.Status));
+
+            return await query.OrderByDescending(a => a.AppointmentDateTime).ToListAsync();
         }
 
         public async Task<bool> CreateAppointment(Appointment appointment)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
                 var patient = await GetCurrentPatient();
@@ -64,11 +70,16 @@ namespace ClinicApp.Services.PatientService
 
                 _context.Appointments.Add(appointment);
                 await _context.SaveChangesAsync();
+
+                await _notificationService.NotifyAppointmentCreated(appointment);
+
+                await transaction.CommitAsync();
                 return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+                await transaction.RollbackAsync();
                 return false;
             }
         }
@@ -85,9 +96,7 @@ namespace ClinicApp.Services.PatientService
                     .FirstOrDefaultAsync(a => a.Id == appointmentId && a.PatientId == patient.Id);
 
                 if (appointment == null) return false;
-
-                if (appointment.Status == AppointmentStatus.Completed ||
-                    appointment.Status == AppointmentStatus.Cancelled) return false;
+                if (appointment.Status == AppointmentStatus.Completed || appointment.Status == AppointmentStatus.Cancelled) return false;
 
                 appointment.Status = AppointmentStatus.Cancelled;
                 appointment.UpdatedAt = DateTime.Now;
@@ -100,16 +109,14 @@ namespace ClinicApp.Services.PatientService
                 {
                     foreach (var waiter in waiters)
                     {
-                        var notification = new Notification
+                        _context.Notifications.Add(new Notification
                         {
                             UserId = waiter.PatientId,
                             Title = "Появилось свободное время",
-                            Message = $"У врача {appointment.Doctor?.User?.FullName} освободилось окно: {appointment.AppointmentDateTime:dd.MM HH:mm}. Успейте записаться!",
+                            Message = $"У врача {appointment.Doctor?.User?.FullName} освободилось окно: {appointment.AppointmentDateTime:dd.MM HH:mm}.",
                             Type = NotificationType.System,
-                            CreatedAt = DateTime.Now,
-                            IsRead = false
-                        };
-                        _context.Notifications.Add(notification);
+                            CreatedAt = DateTime.Now
+                        });
                         waiter.IsNotified = true;
                     }
                 }
@@ -117,9 +124,8 @@ namespace ClinicApp.Services.PatientService
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error: {ex.Message}");
                 return false;
             }
         }
@@ -129,29 +135,32 @@ namespace ClinicApp.Services.PatientService
             var patient = await GetCurrentPatient();
             if (patient == null) return false;
 
-            bool exists = await _context.WaitlistRequests
-                .AnyAsync(w => w.PatientId == patient.Id && w.DoctorId == doctorId && !w.IsNotified);
+            if (await _context.WaitlistRequests.AnyAsync(w => w.PatientId == patient.Id && w.DoctorId == doctorId && !w.IsNotified))
+                return true;
 
-            if (exists) return true;
-
-            var request = new WaitlistRequest
+            _context.WaitlistRequests.Add(new WaitlistRequest
             {
                 PatientId = patient.Id,
                 DoctorId = doctorId,
                 CreatedAt = DateTime.Now,
                 IsNotified = false
-            };
-
-            _context.WaitlistRequests.Add(request);
+            });
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<List<Doctor>> GetAvailableDoctors()
+        public async Task<List<Doctor>> GetAvailableDoctors(int? specializationId = null)
         {
-            return await _context.Doctors
+            var query = _context.Doctors
                .Include(d => d.Specialization).Include(d => d.User)
-               .Where(d => d.User.IsActive).ToListAsync();
+               .Where(d => d.User.IsActive);
+
+            if (specializationId.HasValue)
+            {
+                query = query.Where(d => d.SpecializationId == specializationId.Value);
+            }
+
+            return await query.OrderBy(d => d.User.FullName).ToListAsync();
         }
 
         public async Task<List<MedicalRecord>> GetPatientMedicalRecords()

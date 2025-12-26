@@ -5,18 +5,17 @@ namespace ClinicApp.Services.Core
 {
     public interface IAdminService
     {
-        // Дашборд
         Task<Dictionary<string, object>> GetDashboardStats();
 
-        // Пользователи
-        Task<List<User>> GetUsers(string search, string role);
+        Task<List<User>> GetUsers(string search, string role, int page = 1, int pageSize = 20);
         Task ToggleUserStatus(int userId);
         Task<(bool Success, string Error)> RegisterDoctor(string login, string password, string fullName, string email, string phone, int specializationId, string license, int experience);
 
-        // Справочники
         Task<List<Medication>> GetMedications(string search);
         Task AddMedication(Medication medication);
+        Task UpdateMedication(Medication medication);
         Task<bool> DeleteMedication(int id);
+
 
         Task<List<Specialization>> GetSpecializations();
         Task AddSpecialization(Specialization spec);
@@ -28,9 +27,11 @@ namespace ClinicApp.Services.Core
         Task UpdateDiagnosis(Diagnosis diagnosis);
         Task<bool> DeleteDiagnosis(int id);
 
-        // Расписание
         Task<List<Doctor>> GetDoctorsWithSchedules();
         Task<Doctor?> GetDoctorWithSchedule(int doctorId);
+
+        Task<Schedule?> GetScheduleById(int id);
+
         Task AddSchedule(Schedule schedule);
         Task ToggleSchedule(int scheduleId);
         Task<bool> DeleteSchedule(int scheduleId);

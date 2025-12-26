@@ -1,5 +1,4 @@
-﻿using ClinicApp.Controllers;
-using ClinicApp.Data;
+﻿using ClinicApp.Data;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.DoctorModels;
 using ClinicApp.Models.PatientModels;
@@ -29,7 +28,6 @@ namespace ClinicApp.Services.DoctorService
             return await _context.Doctors
                 .Include(d => d.Specialization)
                 .Include(d => d.User)
-                .Include(d => d.Schedules)
                 .FirstOrDefaultAsync(d => d.Id == currentUser.Id);
         }
 
@@ -47,52 +45,55 @@ namespace ClinicApp.Services.DoctorService
 
         public async Task<List<Appointment>> GetTodayAppointments()
         {
+            return await GetAppointments(date: DateTime.Today);
+        }
+
+        public async Task<List<Appointment>> GetAppointments(DateTime? date = null, AppointmentStatus? status = null, int days = 7)
+        {
             var doctor = await GetCurrentDoctor();
             if (doctor == null) return new List<Appointment>();
 
-            var today = DateTime.Today;
-            return await _context.Appointments
-                .Include(a => a.Patient)
-                    .ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDateTime.Date == today)
-                .OrderBy(a => a.AppointmentDateTime)
-                .ToListAsync();
+            var query = _context.Appointments
+                .Include(a => a.Patient).ThenInclude(p => p.User)
+                .Where(a => a.DoctorId == doctor.Id)
+                .AsQueryable();
+
+            if (date.HasValue)
+            {
+                query = query.Where(a => a.AppointmentDateTime.Date == date.Value.Date);
+            }
+            else
+            {
+                var startDate = DateTime.Today;
+                var endDate = startDate.AddDays(days);
+                query = query.Where(a => a.AppointmentDateTime >= startDate && a.AppointmentDateTime <= endDate);
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(a => a.Status == status.Value);
+            }
+
+            return await query.OrderBy(a => a.AppointmentDateTime).ToListAsync();
         }
 
         public async Task<List<Appointment>> GetUpcomingAppointments(int days = 7)
         {
-            var doctor = await GetCurrentDoctor();
-            if (doctor == null) return new List<Appointment>();
-
-            var startDate = DateTime.Today;
-            var endDate = startDate.AddDays(days);
-
-            return await _context.Appointments
-                .Include(a => a.Patient)
-                    .ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctor.Id &&
-                           a.AppointmentDateTime >= startDate &&
-                           a.AppointmentDateTime <= endDate)
-                .OrderBy(a => a.AppointmentDateTime)
-                .ToListAsync();
+            return await GetAppointments(days: days);
         }
 
         public async Task<bool> UpdateAppointmentStatus(int appointmentId, AppointmentStatus status)
         {
-            var appointment = await _context.Appointments
-                .Include(a => a.Patient)
-                .Include(a => a.Doctor)
-                .FirstOrDefaultAsync(a => a.Id == appointmentId);
-
+            var appointment = await _context.Appointments.FindAsync(appointmentId);
             if (appointment == null) return false;
 
             var oldStatus = appointment.Status;
             appointment.Status = status;
             appointment.UpdatedAt = DateTime.Now;
+
             await _context.SaveChangesAsync();
 
-            if (_notificationService != null)
-                await _notificationService.NotifyAppointmentStatusChanged(appointment, oldStatus.ToString());
+            await _notificationService.NotifyAppointmentStatusChanged(appointment, oldStatus.ToString());
 
             return true;
         }
@@ -100,18 +101,8 @@ namespace ClinicApp.Services.DoctorService
         public async Task<Appointment?> GetAppointmentForConsultation(int appointmentId)
         {
             return await _context.Appointments
-                .Include(a => a.Patient)
-                    .ThenInclude(p => p.User)
-                .Include(a => a.Patient)
-                    .ThenInclude(p => p.MedicalRecords)
-                        .ThenInclude(mr => mr.Appointment)
-                            .ThenInclude(app => app.Doctor)
-                                .ThenInclude(d => d.Specialization)
-                .Include(a => a.Patient)
-                    .ThenInclude(p => p.MedicalRecords)
-                        .ThenInclude(mr => mr.Appointment)
-                            .ThenInclude(app => app.Prescriptions)
-                                .ThenInclude(pr => pr.Medication)
+                .Include(a => a.Patient).ThenInclude(p => p.User)
+                .Include(a => a.Patient).ThenInclude(p => p.MedicalRecords)
                 .FirstOrDefaultAsync(a => a.Id == appointmentId);
         }
 
@@ -121,10 +112,8 @@ namespace ClinicApp.Services.DoctorService
             if (doctor == null) return new List<Prescription>();
 
             return await _context.Prescriptions
-                .Include(p => p.Patient)
-                    .ThenInclude(pat => pat.User)
+                .Include(p => p.Patient).ThenInclude(pat => pat.User)
                 .Include(p => p.Medication)
-
                 .Where(p => p.DoctorId == doctor.Id && p.Medication.PrescriptionRequired)
                 .OrderByDescending(p => p.IssueDate)
                 .ToListAsync();
@@ -143,9 +132,7 @@ namespace ClinicApp.Services.DoctorService
                 _context.Prescriptions.Add(prescription);
                 await _context.SaveChangesAsync();
 
-                if (_notificationService != null)
-                    await _notificationService.NotifyPrescriptionCreated(prescription);
-
+                await _notificationService.NotifyPrescriptionCreated(prescription);
                 return true;
             }
             catch
@@ -162,9 +149,12 @@ namespace ClinicApp.Services.DoctorService
             using var transaction = _context.Database.BeginTransaction();
             try
             {
-                var diagnosis = await _context.Diagnoses.FindAsync(model.DiagnosisId);
-                string diagText = diagnosis != null ? $"{diagnosis.Code} — {diagnosis.Name}" : model.DiagnosisNote;
-                if (!string.IsNullOrEmpty(model.DiagnosisNote) && diagnosis != null) diagText += $" ({model.DiagnosisNote})";
+                string diagText = model.DiagnosisNote;
+                if (model.DiagnosisId > 0)
+                {
+                    var d = await _context.Diagnoses.FindAsync(model.DiagnosisId);
+                    if (d != null) diagText = $"{d.Code} — {d.Name} " + diagText;
+                }
 
                 var record = new MedicalRecord
                 {
@@ -173,14 +163,12 @@ namespace ClinicApp.Services.DoctorService
                     RecordDate = DateTime.Now,
                     Complaints = appointment.Reason,
                     Symptoms = model.Symptoms,
-                    DiagnosisId = model.DiagnosisId,
+                    DiagnosisId = model.DiagnosisId > 0 ? model.DiagnosisId : null,
                     Diagnosis = diagText,
                     Treatment = model.Treatment,
                     Recommendations = model.Recommendations
                 };
                 _context.MedicalRecords.Add(record);
-
-                await _context.SaveChangesAsync();
 
                 var allMeds = (model.Meds ?? new List<PrescriptionItem>())
                               .Concat(model.Recipes ?? new List<PrescriptionItem>())
@@ -216,7 +204,7 @@ namespace ClinicApp.Services.DoctorService
             }
         }
 
-        public async Task<List<Patient>> SearchPatients(string search)
+        public async Task<List<Patient>> SearchPatients(string search, int take = 50)
         {
             var query = _context.Patients.Include(p => p.User).AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
@@ -224,26 +212,59 @@ namespace ClinicApp.Services.DoctorService
                 search = search.Trim();
                 query = query.Where(p => p.User.FullName.Contains(search) || p.PolicyNumber.Contains(search));
             }
-            return await query.OrderBy(p => p.User.FullName).Take(50).ToListAsync();
+            return await query.OrderBy(p => p.User.FullName).Take(take).ToListAsync();
         }
 
         public async Task<Patient?> GetPatientDetails(int id)
         {
             return await _context.Patients
                 .Include(p => p.User)
-                .Include(p => p.MedicalRecords).ThenInclude(m => m.Appointment).ThenInclude(a => a.Doctor).ThenInclude(d => d.Specialization)
-                .Include(p => p.Prescriptions).ThenInclude(pr => pr.Medication)
-                .Include(p => p.Appointments).ThenInclude(a => a.Doctor).ThenInclude(d => d.Specialization)
+
+                .Include(p => p.MedicalRecords)
+                    .ThenInclude(m => m.Appointment)
+                        .ThenInclude(a => a.Doctor)
+                            .ThenInclude(d => d.Specialization)
+                .Include(p => p.Prescriptions)
+                    .ThenInclude(pr => pr.Medication)
+
+                .Include(p => p.Appointments)
+                    .ThenInclude(a => a.Doctor)
+                        .ThenInclude(d => d.Specialization)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<(List<Medication> All, List<Medication> Strict, List<Diagnosis> Diagnoses)> GetConsultationData()
         {
-            var all = await _context.Medications.Where(m => !m.PrescriptionRequired).OrderBy(m => m.Name).ToListAsync();
-            var strict = await _context.Medications.Where(m => m.PrescriptionRequired).OrderBy(m => m.Name).ToListAsync();
-            var diags = await _context.Diagnoses.OrderBy(d => d.Code).ToListAsync();
+            var all = await _context.Medications.Where(m => !m.PrescriptionRequired).Take(100).OrderBy(m => m.Name).ToListAsync();
+            var strict = await _context.Medications.Where(m => m.PrescriptionRequired).Take(100).OrderBy(m => m.Name).ToListAsync();
+            var diags = await _context.Diagnoses.Take(100).OrderBy(d => d.Code).ToListAsync();
             return (all, strict, diags);
         }
 
+        public async Task<List<Diagnosis>> SearchDiagnoses(string term)
+        {
+            var query = _context.Diagnoses.AsQueryable();
+            if (!string.IsNullOrEmpty(term))
+                query = query.Where(d => d.Code.Contains(term) || d.Name.Contains(term));
+            return await query.Take(20).ToListAsync();
+        }
+
+        public async Task<List<Medication>> SearchMedications(string term, bool strictOnly = false)
+        {
+            var query = _context.Medications.AsQueryable();
+
+            if (strictOnly)
+            {
+                query = query.Where(m => m.PrescriptionRequired);
+            }
+
+            if (!string.IsNullOrEmpty(term))
+            {
+                query = query.Where(m => m.Name.Contains(term));
+            }
+
+            return await query.Take(20).ToListAsync();
+        }
     }
 }

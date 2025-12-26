@@ -84,9 +84,9 @@ namespace ClinicApp.Services.Core
 
         public async Task MarkAllAsRead(int userId)
         {
-            var list = await _context.Notifications.Where(n => n.UserId == userId && !n.IsRead).ToListAsync();
-            foreach (var n in list) n.IsRead = true;
-            await _context.SaveChangesAsync();
+            await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
         }
 
         public async Task<int> GetUnreadCount(int userId)

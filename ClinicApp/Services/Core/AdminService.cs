@@ -31,36 +31,42 @@ namespace ClinicApp.Services.Core
             stats["ChartDates"] = appointmentsByDate.Select(x => x.Date.ToString("dd.MM")).ToArray();
             stats["ChartCounts"] = appointmentsByDate.Select(x => x.Count).ToArray();
 
-            var topDiagnoses = await _context.MedicalRecords
-                .Include(m => m.DiagnosisRef)
+            var topDiagnosisIds = await _context.MedicalRecords
                 .Where(m => m.DiagnosisId != null)
-                .GroupBy(m => m.DiagnosisRef.Name)
-                .Select(g => new { Name = g.Key, Count = g.Count() })
+                .GroupBy(m => m.DiagnosisId)
+                .Select(g => new { Id = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .Take(5)
                 .ToListAsync();
-            stats["DiagLabels"] = topDiagnoses.Any() ? topDiagnoses.Select(x => x.Name).ToArray() : new[] { "Нет данных" };
-            stats["DiagData"] = topDiagnoses.Any() ? topDiagnoses.Select(x => x.Count).ToArray() : new[] { 1 };
+            var diagNames = await _context.Diagnoses
+                .Where(d => topDiagnosisIds.Select(t => t.Id).Contains(d.Id))
+                .ToDictionaryAsync(d => d.Id, d => d.Name);
 
-            var birthDates = await _context.Patients.Select(p => p.DateOfBirth).ToListAsync();
+            var diagData = topDiagnosisIds.Select(x => new {
+                Name = x.Id.HasValue && diagNames.ContainsKey(x.Id.Value) ? diagNames[x.Id.Value] : "Unknown",
+                Count = x.Count
+            }).ToList();
+
+            stats["DiagLabels"] = diagData.Select(x => x.Name).ToArray();
+            stats["DiagData"] = diagData.Select(x => x.Count).ToArray();
+
             var today = DateTime.Today;
             int[] ageGroups = new int[4];
 
-            foreach (var dob in birthDates)
-            {
-                var age = today.Year - dob.Year;
-                if (dob.Date > today.AddYears(-age)) age--;
-                if (age < 18) ageGroups[0]++;
-                else if (age <= 35) ageGroups[1]++;
-                else if (age <= 60) ageGroups[2]++;
-                else ageGroups[3]++;
-            }
+            ageGroups[0] = await _context.Patients.CountAsync(p => p.DateOfBirth > today.AddYears(-18));
+            
+            ageGroups[1] = await _context.Patients.CountAsync(p => p.DateOfBirth <= today.AddYears(-18) && p.DateOfBirth > today.AddYears(-35));
+
+            ageGroups[2] = await _context.Patients.CountAsync(p => p.DateOfBirth <= today.AddYears(-35) && p.DateOfBirth > today.AddYears(-60));
+
+            ageGroups[3] = await _context.Patients.CountAsync(p => p.DateOfBirth <= today.AddYears(-60));
+
             stats["AgeData"] = ageGroups;
 
             return stats;
         }
 
-        public async Task<List<User>> GetUsers(string search, string role)
+        public async Task<List<User>> GetUsers(string search, string role, int page = 1, int pageSize = 20)
         {
             var query = _context.Users.AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
@@ -69,7 +75,12 @@ namespace ClinicApp.Services.Core
                 query = query.Where(u => u.FullName.Contains(search) || u.Login.Contains(search) || u.Email.Contains(search));
             }
             if (!string.IsNullOrWhiteSpace(role)) query = query.Where(u => u.Role == role);
-            return await query.OrderBy(u => u.Role).ThenBy(u => u.FullName).ToListAsync();
+
+            return await query
+                .OrderBy(u => u.Role).ThenBy(u => u.FullName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         public async Task ToggleUserStatus(int userId)
@@ -111,13 +122,28 @@ namespace ClinicApp.Services.Core
         {
             var query = _context.Medications.AsQueryable();
             if (!string.IsNullOrEmpty(search)) query = query.Where(m => m.Name.Contains(search));
-            return await query.OrderBy(m => m.Name).ToListAsync();
+            return await query.OrderBy(m => m.Name).Take(100).ToListAsync();
         }
 
         public async Task AddMedication(Medication medication)
         {
             _context.Medications.Add(medication);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateMedication(Medication medication)
+        {
+            var existing = await _context.Medications.FindAsync(medication.Id);
+            if (existing != null)
+            {
+                existing.Name = medication.Name;
+                existing.Form = medication.Form;
+                existing.Manufacturer = medication.Manufacturer;
+                existing.Description = medication.Description;
+                existing.PrescriptionRequired = medication.PrescriptionRequired;
+
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task<bool> DeleteMedication(int id)
@@ -169,7 +195,7 @@ namespace ClinicApp.Services.Core
         {
             var query = _context.Diagnoses.AsQueryable();
             if (!string.IsNullOrEmpty(search)) query = query.Where(d => d.Code.Contains(search) || d.Name.Contains(search));
-            return await query.OrderBy(d => d.Code).ToListAsync();
+            return await query.OrderBy(d => d.Code).Take(100).ToListAsync();
         }
 
         public async Task<(bool Success, string Error)> AddDiagnosis(Diagnosis diagnosis)
@@ -220,6 +246,11 @@ namespace ClinicApp.Services.Core
                 .FirstOrDefaultAsync(d => d.Id == doctorId);
         }
 
+        public async Task<Schedule?> GetScheduleById(int id)
+        {
+            return await _context.Schedules.FindAsync(id);
+        }
+
         public async Task AddSchedule(Schedule schedule)
         {
             schedule.IsActive = true;
@@ -264,12 +295,24 @@ namespace ClinicApp.Services.Core
 
         public async Task GenerateBulkSchedule(int doctorId, List<int> daysOfWeek, TimeSpan startTime, TimeSpan endTime, int duration)
         {
-            foreach (var day in daysOfWeek)
+            var existingDays = await _context.Schedules
+                .Where(s => s.DoctorId == doctorId && s.IsActive && daysOfWeek.Contains(s.DayOfWeek))
+                .Select(s => s.DayOfWeek)
+                .ToListAsync();
+
+            var daysToAdd = daysOfWeek.Except(existingDays);
+
+            foreach (var day in daysToAdd)
             {
-                if (!await _context.Schedules.AnyAsync(s => s.DoctorId == doctorId && s.DayOfWeek == day && s.IsActive))
+                _context.Schedules.Add(new Schedule
                 {
-                    _context.Schedules.Add(new Schedule { DoctorId = doctorId, DayOfWeek = day, StartTime = startTime, EndTime = endTime, SlotDurationMinutes = duration, IsActive = true });
-                }
+                    DoctorId = doctorId,
+                    DayOfWeek = day,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    SlotDurationMinutes = duration,
+                    IsActive = true
+                });
             }
             await _context.SaveChangesAsync();
         }
