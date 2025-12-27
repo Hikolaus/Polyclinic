@@ -29,27 +29,26 @@ namespace ClinicApp.Controllers
             if (stats.ContainsKey("TotalPatients")) ViewBag.TotalPatients = stats["TotalPatients"];
             if (stats.ContainsKey("TotalDoctors")) ViewBag.TotalDoctors = stats["TotalDoctors"];
             if (stats.ContainsKey("TotalAppointments")) ViewBag.TotalAppointments = stats["TotalAppointments"];
-
             if (stats.ContainsKey("ChartDates")) ViewBag.Dates = stats["ChartDates"];
             if (stats.ContainsKey("ChartCounts")) ViewBag.DateCounts = stats["ChartCounts"];
-
             if (stats.ContainsKey("DiagLabels")) ViewBag.DiagLabels = stats["DiagLabels"];
             if (stats.ContainsKey("DiagData")) ViewBag.DiagData = stats["DiagData"];
-
             if (stats.ContainsKey("AgeData")) ViewBag.AgeData = stats["AgeData"];
 
             return View();
         }
 
-        public async Task<IActionResult> Users(string search, string role)
+        public async Task<IActionResult> Users(string search, string role, int page = 1)
         {
             if (!IsAdmin()) return View("NotAuthorized");
             ViewBag.CurrentSearch = search;
             ViewBag.CurrentRole = role;
-            return View(await _adminService.GetUsers(search, role));
+
+            return View(await _adminService.GetUsers(search, role, page, 50));
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleUserStatus(int userId)
         {
             await _adminService.ToggleUserStatus(userId);
@@ -63,6 +62,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddMedication(Medication medication)
         {
             if (ModelState.IsValid) await _adminService.AddMedication(medication);
@@ -70,6 +70,15 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateMedication(Medication medication)
+        {
+            await _adminService.UpdateMedication(medication);
+            return RedirectToAction("Medications");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteMedication(int id)
         {
             if (!await _adminService.DeleteMedication(id)) TempData["Error"] = "Ошибка удаления (возможно, используется)";
@@ -83,6 +92,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddSpecialization(Specialization spec)
         {
             await _adminService.AddSpecialization(spec);
@@ -90,6 +100,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateSpecializationTime(int id, int minutes)
         {
             await _adminService.UpdateSpecializationTime(id, minutes);
@@ -97,6 +108,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteSpecialization(int id)
         {
             if (!await _adminService.DeleteSpecialization(id)) TempData["Error"] = "Ошибка удаления";
@@ -112,6 +124,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterDoctor(string login, string password, string fullName, string email, string phone, int specializationId, string license, int experience)
         {
             if (!IsAdmin()) return View("NotAuthorized");
@@ -142,6 +155,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddSchedule(Schedule schedule)
         {
             if (schedule.StartTime >= schedule.EndTime) TempData["Error"] = "Ошибка времени";
@@ -150,9 +164,10 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleSchedule(int scheduleId)
         {
-            var schedule = (await _adminService.GetDoctorsWithSchedules()).SelectMany(d => d.Schedules).FirstOrDefault(s => s.Id == scheduleId);
+            var schedule = await _adminService.GetScheduleById(scheduleId);
             if (schedule != null)
             {
                 await _adminService.ToggleSchedule(scheduleId);
@@ -162,9 +177,10 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteSchedule(int scheduleId)
         {
-            var schedule = (await _adminService.GetDoctorsWithSchedules()).SelectMany(d => d.Schedules).FirstOrDefault(s => s.Id == scheduleId);
+            var schedule = await _adminService.GetScheduleById(scheduleId);
             if (schedule != null)
             {
                 if (!await _adminService.DeleteSchedule(scheduleId)) TempData["Error"] = "Ошибка удаления";
@@ -182,6 +198,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> BulkSchedule(int doctorId, List<int> daysOfWeek, TimeSpan startTime, TimeSpan endTime, int duration)
         {
             await _adminService.GenerateBulkSchedule(doctorId, daysOfWeek, startTime, endTime, duration);
@@ -189,6 +206,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateSchedule(Schedule schedule)
         {
             await _adminService.UpdateSchedule(schedule);
@@ -202,6 +220,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddDiagnosis(Diagnosis diagnosis)
         {
             var res = await _adminService.AddDiagnosis(diagnosis);
@@ -210,6 +229,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteDiagnosis(int id)
         {
             if (!await _adminService.DeleteDiagnosis(id)) TempData["Error"] = "Ошибка удаления";
@@ -217,6 +237,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateDiagnosis(Diagnosis diagnosis)
         {
             await _adminService.UpdateDiagnosis(diagnosis);

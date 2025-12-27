@@ -27,16 +27,11 @@ namespace ClinicApp.Controllers
             var p = await _patientService.GetCurrentPatient();
             if (p == null) return View("NotAuthorized");
 
-            var apps = await _patientService.GetPatientAppointments();
+            var activeStatuses = new[] { AppointmentStatus.Scheduled, AppointmentStatus.Confirmed, AppointmentStatus.InProgress };
+            var activeApps = await _patientService.GetPatientAppointments(p.Id, start: DateTime.Today, statuses: activeStatuses);
 
-            ViewBag.TotalAppointments = apps.Count;
-
-            var activeApps = apps.Where(a =>
-                a.AppointmentDateTime.Date >= DateTime.Today &&
-                a.Status != AppointmentStatus.Cancelled &&
-                a.Status != AppointmentStatus.Completed &&
-                a.Status != AppointmentStatus.NoShow
-            ).ToList();
+            var allApps = await _patientService.GetPatientAppointments(p.Id);
+            ViewBag.TotalAppointments = allApps.Count;
 
             ViewBag.UpcomingAppointments = activeApps.Count;
             ViewBag.RecentAppointments = activeApps.OrderBy(a => a.AppointmentDateTime).Take(5).ToList();
@@ -46,34 +41,22 @@ namespace ClinicApp.Controllers
 
         public async Task<IActionResult> MyAppointments(string tab = "upcoming", DateTime? startDate = null, DateTime? endDate = null)
         {
-            var allAppointments = await _patientService.GetPatientAppointments();
-
-            if (startDate.HasValue)
-                allAppointments = allAppointments.Where(a => a.AppointmentDateTime.Date >= startDate.Value.Date).ToList();
-            if (endDate.HasValue)
-                allAppointments = allAppointments.Where(a => a.AppointmentDateTime.Date <= endDate.Value.Date).ToList();
+            var p = await _patientService.GetCurrentPatient();
+            if (p == null) return View("NotAuthorized");
 
             List<Appointment> filteredList;
 
             if (tab == "history")
             {
-                filteredList = allAppointments
-                    .Where(a => a.AppointmentDateTime.Date < DateTime.Today ||
-                                a.Status == AppointmentStatus.Completed ||
-                                a.Status == AppointmentStatus.Cancelled ||
-                                a.Status == AppointmentStatus.NoShow)
-                    .OrderByDescending(a => a.AppointmentDateTime)
-                    .ToList();
+                var historyStatuses = new[] { AppointmentStatus.Completed, AppointmentStatus.Cancelled, AppointmentStatus.NoShow };
+                filteredList = await _patientService.GetPatientAppointments(p.Id, startDate, endDate, historyStatuses);
             }
             else
             {
-                filteredList = allAppointments
-                    .Where(a => a.AppointmentDateTime.Date >= DateTime.Today &&
-                                (a.Status == AppointmentStatus.Scheduled ||
-                                 a.Status == AppointmentStatus.Confirmed ||
-                                 a.Status == AppointmentStatus.InProgress))
-                    .OrderBy(a => a.AppointmentDateTime)
-                    .ToList();
+                var activeStatuses = new[] { AppointmentStatus.Scheduled, AppointmentStatus.Confirmed, AppointmentStatus.InProgress };
+
+                var start = startDate ?? DateTime.Today;
+                filteredList = await _patientService.GetPatientAppointments(p.Id, start, endDate, activeStatuses);
             }
 
             ViewBag.CurrentTab = tab;
@@ -93,7 +76,7 @@ namespace ClinicApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDoctorsBySpec(int specId)
         {
-            var docs = (await _patientService.GetAvailableDoctors()).Where(d => d.SpecializationId == specId)
+            var docs = (await _patientService.GetAvailableDoctors(specId))
                 .Select(d => new { d.Id, Name = d.User.FullName });
             return Json(docs);
         }
@@ -118,6 +101,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateAppointment(int doctorId, string dateStr, string reason)
         {
             if (DateTime.TryParse(dateStr, out DateTime date))
@@ -129,12 +113,13 @@ namespace ClinicApp.Controllers
                     return RedirectToAction("MyAppointments", new { tab = "upcoming" });
                 }
             }
-            TempData["Error"] = "Ошибка записи";
+            TempData["Error"] = "Ошибка записи (время занято)";
             ViewBag.Specializations = await _adminService.GetSpecializations();
             return View();
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelAppointment(int appointmentId)
         {
             if (await _patientService.CancelAppointment(appointmentId))

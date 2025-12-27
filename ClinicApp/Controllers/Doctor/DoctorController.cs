@@ -35,14 +35,19 @@ namespace ClinicApp.Controllers
         public async Task<IActionResult> Appointments(DateTime? date, string status)
         {
             if (!IsDoctor()) return View("NotAuthorized");
-            var apps = await _doctorService.GetUpcomingAppointments(30);
-            if (date.HasValue) apps = apps.Where(a => a.AppointmentDateTime.Date == date.Value.Date).ToList();
+
+            AppointmentStatus? statusEnum = null;
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<AppointmentStatus>(status, out var s))
-                apps = apps.Where(a => a.Status == s).ToList();
+            {
+                statusEnum = s;
+            }
+
+            var apps = await _doctorService.GetAppointments(date, statusEnum, days: 30);
             return View(apps);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkNoShow(int appointmentId)
         {
             await _doctorService.UpdateAppointmentStatus(appointmentId, AppointmentStatus.NoShow);
@@ -68,6 +73,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CompleteConsultation(ConsultationViewModel model)
         {
             if (!IsDoctor()) return View("NotAuthorized");
@@ -87,7 +93,7 @@ namespace ClinicApp.Controllers
         {
             if (!IsDoctor()) return View("NotAuthorized");
             ViewBag.SearchTerm = search;
-            return View(await _doctorService.SearchPatients(search));
+            return View(await _doctorService.SearchPatients(search, take: 50));
         }
 
         public async Task<IActionResult> PatientDetails(int id)
@@ -96,6 +102,20 @@ namespace ClinicApp.Controllers
             var p = await _doctorService.GetPatientDetails(id);
             if (p == null) return NotFound();
             return View(p);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchDiagnoses(string term)
+        {
+            if (!IsDoctor()) return Unauthorized();
+            return Json(await _doctorService.SearchDiagnoses(term));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchMedications(string term, bool strict = false)
+        {
+            if (!IsDoctor()) return Unauthorized();
+            return Json(await _doctorService.SearchMedications(term, strict));
         }
     }
 }
