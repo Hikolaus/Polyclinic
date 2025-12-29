@@ -18,6 +18,8 @@
         }
 
         <form method="post">
+            @Html.AntiForgeryToken()
+
             <div class="mb-3">
                 <label for="login" class="form-label">Логин:</label>
                 <input type="text" class="form-control" id="login" name="login" required>

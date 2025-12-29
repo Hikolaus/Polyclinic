@@ -18,6 +18,8 @@
         }
 
         <form method="post" action="/Auth/Register">
+            @Html.AntiForgeryToken()
+
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="login" class="form-label">Логин *</label>

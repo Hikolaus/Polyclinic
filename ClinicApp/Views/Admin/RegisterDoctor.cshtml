@@ -17,6 +17,7 @@
                     }
 
                     <form action="/Admin/RegisterDoctor" method="post">
+                        @Html.AntiForgeryToken()
 
                         <h5 class="text-muted mb-3 border-bottom pb-2">Учетная запись</h5>
                         <div class="row mb-3">

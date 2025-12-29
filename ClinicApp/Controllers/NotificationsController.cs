@@ -25,13 +25,7 @@ namespace ClinicApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> MarkAsRead([FromBody] int id)
-        {
-            await _notificationService.MarkAsRead(id);
-            return Ok();
-        }
-
-        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllAsRead()
         {
             var currentUser = _authService.GetCurrentUser();
@@ -39,6 +33,13 @@ namespace ClinicApp.Controllers
             {
                 await _notificationService.MarkAllAsRead(currentUser.Id);
             }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkAsRead([FromBody] int id)
+        {
+            await _notificationService.MarkAsRead(id);
             return Ok();
         }
 

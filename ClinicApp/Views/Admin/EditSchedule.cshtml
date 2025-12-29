@@ -33,6 +33,8 @@
         </div>
         <div class="card-body bg-light">
             <form action="/Admin/AddSchedule" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
+
                 <input type="hidden" name="DoctorId" value="@(doctor?.Id ?? 0)" />
 
                 <div class="col-md-3">
@@ -148,6 +150,8 @@
                                 <td>@s.SlotDurationMinutes мин</td>
                                 <td>
                                     <form action="/Admin/ToggleSchedule" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+
                                         <input type="hidden" name="scheduleId" value="@s.Id" />
                                         <button type="submit" class="btn btn-sm rounded-pill px-3 @(s.IsActive ? "btn-success" : "btn-secondary")">
                                             @(s.IsActive ? "Активен" : "Отключен")
@@ -171,6 +175,8 @@
                                     </button>
 
                                     <form action="/Admin/DeleteSchedule" method="post" onsubmit="return confirm('Удалить этот слот?');" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+
                                         <input type="hidden" name="scheduleId" value="@s.Id" />
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
                                             <i class="fas fa-trash"></i>
@@ -202,6 +208,8 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/Admin/UpdateSchedule" method="post">
+                @Html.AntiForgeryToken()
+
                 <div class="modal-body">
                     <input type="hidden" name="Id" id="editId" />
                     <input type="hidden" name="DoctorId" id="editDoctorId" />

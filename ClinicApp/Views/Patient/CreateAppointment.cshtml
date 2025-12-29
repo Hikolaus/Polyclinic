@@ -16,6 +16,7 @@
     }
 
     <form action="/Patient/CreateAppointment" method="post" id="bookingForm">
+        @Html.AntiForgeryToken() 
 
         <input type="hidden" name="doctorId" id="selectedDoctorId" value="" />
         <input type="hidden" name="dateStr" id="selectedDateTime" value="" />

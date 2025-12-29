@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Moq;
 using ClinicApp.Data;
 using ClinicApp.Services.PatientService;
@@ -21,19 +22,23 @@ namespace ClinicApp.Tests
         private PatientService _patientService;
         private ScheduleService _scheduleService;
         private Mock<IAuthService> _authServiceMock;
+        private Mock<INotificationService> _notificationServiceMock;
 
         [SetUp]
         public void Setup()
         {
             var options = new DbContextOptionsBuilder<ClinicContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
 
             _context = new ClinicContext(options);
             _authServiceMock = new Mock<IAuthService>();
+            _notificationServiceMock = new Mock<INotificationService>();
 
             _scheduleService = new ScheduleService(_context);
-            _patientService = new PatientService(_context, _authServiceMock.Object, _scheduleService);
+
+            _patientService = new PatientService(_context, _authServiceMock.Object, _scheduleService, _notificationServiceMock.Object);
         }
 
         [TearDown]
@@ -70,7 +75,6 @@ namespace ClinicApp.Tests
         [Test]
         public async Task CreateAppointment_SlotTaken_ReturnsFalse()
         {
-
             int docId = 1;
             int patId = 10;
             var appDate = new DateTime(2025, 12, 29, 9, 0, 0);

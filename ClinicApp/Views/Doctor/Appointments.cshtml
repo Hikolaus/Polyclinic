@@ -83,6 +83,8 @@
                                 </a>
 
                                 <form action="/Doctor/MarkNoShow" method="post" style="display:inline; margin-left: 5px;">
+                                    @Html.AntiForgeryToken()
+                                    
                                     <input type="hidden" name="appointmentId" value="@item.Id" />
                                     <button type="submit" class="btn btn-outline-secondary btn-sm"
                                             onclick="return confirm('Отметить как неявку?');">

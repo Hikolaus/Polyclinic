@@ -151,6 +151,8 @@
                                         {
                                             <form action="/Patient/CancelAppointment" method="post"
                                                   onsubmit="return confirm('Вы уверены, что хотите отменить запись?');" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+
                                                 <input type="hidden" name="appointmentId" value="@item.Id" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Отменить запись">
                                                     <i class="fas fa-times"></i>

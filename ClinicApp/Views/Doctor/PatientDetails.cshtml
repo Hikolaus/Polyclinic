@@ -18,12 +18,16 @@
                 <div class="card-body">
                     <p class="mb-1 text-muted small">Дата рождения</p>
                     <p class="fw-bold">@Model.DateOfBirth.ToString("dd.MM.yyyy") (@(DateTime.Now.Year - Model.DateOfBirth.Year) лет)</p>
+
                     <p class="mb-1 text-muted small">Пол</p>
                     <p>@(Model.Gender == "Male" ? "Мужской" : "Женский")</p>
+
                     <p class="mb-1 text-muted small">Полис ОМС</p>
                     <p class="fw-bold text-success">@Model.PolicyNumber</p>
+
                     <p class="mb-1 text-muted small">Телефон</p>
                     <p>@(Model.User?.Phone ?? "-")</p>
+
                     <p class="mb-1 text-muted small">Адрес</p>
                     <p>@(Model.Address ?? "-")</p>
                 </div>
@@ -51,6 +55,7 @@
                         </li>
                     </ul>
                 </div>
+
                 <div class="card-body tab-content">
 
                     <div class="tab-pane fade show active" id="history">
@@ -73,6 +78,10 @@
                                                 <p><strong>Жалобы:</strong> @rec.Complaints</p>
                                                 <p><strong>Симптомы:</strong> @rec.Symptoms</p>
                                                 <p><strong>Лечение:</strong> @rec.Treatment</p>
+                                                @if (!string.IsNullOrEmpty(rec.Recommendations))
+                                                {
+                                                    <p><strong>Рекомендации:</strong> @rec.Recommendations</p>
+                                                }
                                             </div>
                                         </div>
                                     </div>
@@ -81,7 +90,6 @@
                         }
                         else
                         {
-
                             <p class="text-muted text-center my-4">Записей нет.</p>
                         }
                     </div>
@@ -90,7 +98,14 @@
                         @if (Model.Prescriptions.Any())
                         {
                             <table class="table table-sm table-hover align-middle">
-                                <thead><tr><th>Дата</th><th>Препарат</th><th>Дозировка</th><th>Тип</th></tr></thead>
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Препарат</th>
+                                        <th>Дозировка</th>
+                                        <th>Тип</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     @foreach (var p in Model.Prescriptions.OrderByDescending(x => x.IssueDate))
                                     {
@@ -115,7 +130,6 @@
                         }
                         else
                         {
-
                             <p class="text-muted text-center my-4">Лекарств не назначалось.</p>
                         }
                     </div>
@@ -123,16 +137,52 @@
                     <div class="tab-pane fade" id="visits">
                         @if (Model.Appointments.Any())
                         {
-                            <table class="table table-sm">
-                                <thead><tr><th>Дата</th><th>Врач</th><th>Причина</th><th>Статус</th></tr></thead>
+                            <table class="table table-sm table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Врач</th>
+                                        <th>Причина</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     @foreach (var a in Model.Appointments.OrderByDescending(x => x.AppointmentDateTime))
                                     {
                                         <tr>
                                             <td>@a.AppointmentDateTime.ToString("dd.MM.yyyy HH:mm")</td>
-                                            <td>@a.Doctor?.Specialization?.Name</td>
+                                            <td>
+                                                <strong>@a.Doctor?.Specialization?.Name</strong>
+                                                <br>
+                                                <small class="text-muted">@a.Doctor?.User?.FullName</small>
+                                            </td>
                                             <td>@a.Reason</td>
-                                            <td>@a.Status</td>
+                                            <td>
+                                                @switch (a.Status)
+                                                {
+                                                    case ClinicApp.Models.Core.AppointmentStatus.Scheduled:
+                                                        <span class="badge bg-primary">Запланировано</span>
+                                                        break;
+                                                    case ClinicApp.Models.Core.AppointmentStatus.Confirmed:
+                                                        <span class="badge bg-success">Подтверждено</span>
+                                                        break;
+                                                    case ClinicApp.Models.Core.AppointmentStatus.InProgress:
+                                                        <span class="badge bg-warning text-dark">В процессе</span>
+                                                        break;
+                                                    case ClinicApp.Models.Core.AppointmentStatus.Completed:
+                                                        <span class="badge bg-secondary">Завершено</span>
+                                                        break;
+                                                    case ClinicApp.Models.Core.AppointmentStatus.Cancelled:
+                                                        <span class="badge bg-danger">Отменено</span>
+                                                        break;
+                                                    case ClinicApp.Models.Core.AppointmentStatus.NoShow:
+                                                        <span class="badge bg-dark">Неявка</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-light text-dark border">@a.Status</span>
+                                                        break;
+                                                }
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -140,7 +190,6 @@
                         }
                         else
                         {
-
                             <p class="text-muted text-center">Записей нет.</p>
                         }
                     </div>

@@ -104,6 +104,8 @@
                                 </td>
                                 <td>
                                     <form action="/Admin/ToggleUserStatus" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+
                                         <input type="hidden" name="userId" value="@user.Id" />
                                         @if (user.IsActive)
                                         {

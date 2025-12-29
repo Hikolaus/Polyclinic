@@ -22,6 +22,8 @@
         <div id="addForm" class="collapse">
             <div class="card-body">
                 <form action="/Admin/AddDiagnosis" method="post">
+                    @Html.AntiForgeryToken()
+
                     <div class="row g-3">
                         <div class="col-md-2">
                             <label class="form-label small text-muted">Код МКБ</label>
@@ -100,6 +102,8 @@
                                     </button>
 
                                     <form action="/Admin/DeleteDiagnosis" method="post" onsubmit="return confirm('Удалить диагноз?');" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+
                                         <input type="hidden" name="id" value="@d.Id" />
                                         <button class="btn btn-sm btn-outline-danger border-0"><i class="fas fa-trash"></i></button>
                                     </form>
@@ -125,6 +129,8 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/Admin/UpdateDiagnosis" method="post">
+                @Html.AntiForgeryToken()
+
                 <div class="modal-body">
                     <input type="hidden" name="Id" id="editId" />
 

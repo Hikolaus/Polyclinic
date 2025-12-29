@@ -152,6 +152,8 @@
 
             <div class="scrollable-form-body shadow-sm">
                 <form action="/Doctor/CompleteConsultation" method="post" id="consultationForm">
+                    @Html.AntiForgeryToken()
+
                     <input type="hidden" name="AppointmentId" value="@Model.Id" />
 
                     <div class="card mb-4 border-primary">
