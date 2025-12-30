@@ -108,6 +108,8 @@
         monthYearDisplay.innerText = dateObj.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
         calendarDays.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:10px;">Загрузка...</div>';
 
+        slotsContainer.classList.add('d-none');
+        reasonBlock.classList.add('d-none');
         waitlistContainer.classList.add('d-none');
 
         const docId = docSelect.value;
@@ -119,7 +121,8 @@
             renderCalendarGrid();
 
             const hasAnyOpenSlot = availabilityCache.some(x => !x.isFull);
-            if (!hasAnyOpenSlot && availabilityCache.length === 0) {
+
+            if (!hasAnyOpenSlot && availabilityCache.length > 0) {
                 waitlistContainer.classList.remove('d-none');
             }
 
@@ -158,18 +161,37 @@
                 if (info.isFull) {
                     cell.classList.add('full');
                     cell.title = "Все время занято";
+
+                    cell.onclick = () => {
+                        document.querySelectorAll('.calendar-day').forEach(c => c.classList.remove('selected'));
+                        cell.classList.add('selected');
+
+                        slotsContainer.classList.remove('d-none');
+                        slotsLoader.classList.add('d-none');
+                        reasonBlock.classList.add('d-none');
+
+                        selectedDateText.innerText = dateStr.split('-').reverse().join('.');
+                        slotsList.innerHTML = '<span class="text-danger fw-bold">На этот день свободного времени нет. Выберите другую зеленую дату.</span>';
+
+                        const hasAnyOpenSlot = availabilityCache.some(x => !x.isFull);
+                        if (!hasAnyOpenSlot) {
+                            waitlistContainer.classList.remove('d-none');
+                        } else {
+                            waitlistContainer.classList.add('d-none');
+                        }
+                    };
                 } else {
                     cell.classList.add('available');
                     const indicator = document.createElement('div');
                     indicator.className = 'slot-indicator';
                     cell.appendChild(indicator);
-                }
 
-                cell.onclick = () => {
-                    document.querySelectorAll('.calendar-day').forEach(c => c.classList.remove('selected'));
-                    cell.classList.add('selected');
-                    loadTimeSlots(dateStr);
-                };
+                    cell.onclick = () => {
+                        document.querySelectorAll('.calendar-day').forEach(c => c.classList.remove('selected'));
+                        cell.classList.add('selected');
+                        loadTimeSlots(dateStr);
+                    };
+                }
             } else {
                 cell.classList.add('disabled');
             }
@@ -195,9 +217,12 @@
             slotsLoader.classList.add('d-none');
 
             if (times.length === 0) {
-                slotsList.innerHTML = '<span class="text-danger fw-bold">На этот день свободного времени нет.</span>';
+                slotsList.innerHTML = '<span class="text-danger fw-bold">На этот день свободного времени нет. Выберите другую зеленую дату.</span>';
 
-                waitlistContainer.classList.remove('d-none');
+                const hasAnyOpenSlot = availabilityCache.some(x => !x.isFull);
+                if (!hasAnyOpenSlot) {
+                    waitlistContainer.classList.remove('d-none');
+                }
                 return;
             }
 
@@ -226,7 +251,7 @@
             });
         } catch (e) {
             console.error(e);
-            slotsList.innerHTML = 'Ошибка';
+            slotsList.innerHTML = '<span class="text-danger">Ошибка загрузки расписания</span>';
         }
     }
 

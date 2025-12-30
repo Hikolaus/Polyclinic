@@ -27,7 +27,7 @@ namespace ClinicApp.Controllers
             var p = await _patientService.GetCurrentPatient();
             if (p == null) return View("NotAuthorized");
 
-            var activeStatuses = new[] { AppointmentStatus.Scheduled, AppointmentStatus.Confirmed, AppointmentStatus.InProgress };
+            var activeStatuses = new[] { AppointmentStatus.Scheduled, AppointmentStatus.InProgress };
             var activeApps = await _patientService.GetPatientAppointments(p.Id, start: DateTime.Today, statuses: activeStatuses);
 
             var allApps = await _patientService.GetPatientAppointments(p.Id);
@@ -53,7 +53,7 @@ namespace ClinicApp.Controllers
             }
             else
             {
-                var activeStatuses = new[] { AppointmentStatus.Scheduled, AppointmentStatus.Confirmed, AppointmentStatus.InProgress };
+                var activeStatuses = new[] { AppointmentStatus.Scheduled, AppointmentStatus.InProgress };
 
                 var start = startDate ?? DateTime.Today;
                 filteredList = await _patientService.GetPatientAppointments(p.Id, start, endDate, activeStatuses);

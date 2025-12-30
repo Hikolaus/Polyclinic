@@ -80,7 +80,7 @@
                                 var isCancelled = item.Status == ClinicApp.Models.Core.AppointmentStatus.Cancelled;
                                 var rowClass = isCancelled ? "table-secondary text-muted" : "";
                                 bool isPast = item.AppointmentDateTime < DateTime.Now;
-                                bool isExpired = isPast && (item.Status == ClinicApp.Models.Core.AppointmentStatus.Scheduled || item.Status == ClinicApp.Models.Core.AppointmentStatus.Confirmed);
+                                bool isExpired = isPast && (item.Status == ClinicApp.Models.Core.AppointmentStatus.Scheduled);
 
                                 <tr class="@rowClass">
                                     <td class="fw-bold">
@@ -107,16 +107,6 @@
                                                 else
                                                 {
                                                     <span class="badge bg-primary">Запланировано</span>
-                                                }
-                                                break;
-                                            case ClinicApp.Models.Core.AppointmentStatus.Confirmed:
-                                                if (isExpired)
-                                                {
-                                                    <span class="badge bg-secondary text-white">Не закрыт</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-success">Подтверждено</span>
                                                 }
                                                 break;
                                             case ClinicApp.Models.Core.AppointmentStatus.InProgress:
@@ -146,8 +136,7 @@
                                         }
                                     </td>
                                     <td class="text-end">
-                                        @if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Scheduled ||
-                                                                        item.Status == ClinicApp.Models.Core.AppointmentStatus.Confirmed)
+                                        @if (item.Status == ClinicApp.Models.Core.AppointmentStatus.Scheduled)
                                         {
                                             <form action="/Patient/CancelAppointment" method="post"
                                                   onsubmit="return confirm('Вы уверены, что хотите отменить запись?');" style="display:inline;">
@@ -176,7 +165,7 @@
             {
                 <div class="text-center p-5 text-muted">
                     @if (currentTab == "upcoming")
-                    {
+                    {   
                         <i class="fas fa-calendar-day fa-3x mb-3 text-primary opacity-25"></i>
                         <h5>Нет предстоящих записей</h5>
                         <p>Самое время записаться к врачу!</p>

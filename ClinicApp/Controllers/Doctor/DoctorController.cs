@@ -61,7 +61,7 @@ namespace ClinicApp.Controllers
             var app = await _doctorService.GetAppointmentForConsultation(id);
             if (app == null) return NotFound();
 
-            if (app.Status == AppointmentStatus.Scheduled || app.Status == AppointmentStatus.Confirmed)
+            if (app.Status == AppointmentStatus.Scheduled)
                 await _doctorService.UpdateAppointmentStatus(id, AppointmentStatus.InProgress);
 
             var data = await _doctorService.GetConsultationData();

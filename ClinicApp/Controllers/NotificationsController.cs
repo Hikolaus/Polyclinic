@@ -20,6 +20,8 @@ namespace ClinicApp.Controllers
             var currentUser = _authService.GetCurrentUser();
             if (currentUser == null) return RedirectToAction("Login", "Auth");
 
+            if (currentUser.Role != "Patient") return RedirectToAction("NotAuthorized", "Auth");
+
             var notifications = await _notificationService.GetUserNotifications(currentUser.Id);
             return View(notifications);
         }
@@ -29,7 +31,7 @@ namespace ClinicApp.Controllers
         public async Task<IActionResult> MarkAllAsRead()
         {
             var currentUser = _authService.GetCurrentUser();
-            if (currentUser != null)
+            if (currentUser != null && currentUser.Role == "Patient")
             {
                 await _notificationService.MarkAllAsRead(currentUser.Id);
             }
@@ -39,15 +41,20 @@ namespace ClinicApp.Controllers
         [HttpPost]
         public async Task<IActionResult> MarkAsRead([FromBody] int id)
         {
-            await _notificationService.MarkAsRead(id);
-            return Ok();
+            var currentUser = _authService.GetCurrentUser();
+            if (currentUser != null && currentUser.Role == "Patient")
+            {
+                await _notificationService.MarkAsRead(id);
+                return Ok();
+            }
+            return Unauthorized();
         }
 
         [HttpGet]
         public async Task<IActionResult> GetUnreadCount()
         {
             var currentUser = _authService.GetCurrentUser();
-            if (currentUser == null) return Json(0);
+            if (currentUser == null || currentUser.Role != "Patient") return Json(0);
 
             var count = await _notificationService.GetUnreadCount(currentUser.Id);
             return Json(count);

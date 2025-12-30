@@ -5,21 +5,23 @@
     var strictMeds = ViewBag.StrictMedications as List<ClinicApp.Models.Core.Medication>;
     var diagnoses = ViewBag.Diagnoses as List<ClinicApp.Models.Core.Diagnosis>;
 }
+
 @section Styles {
     <link href="~/css/consultation.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <link href="~/lib/select2/select2.min.css" rel="stylesheet" />
+    <link href="~/lib/select2/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
         .history-item {
             cursor: pointer;
             transition: background-color 0.2s;
         }
 
-        .history-item:hover {
-            background-color: #f1f3f5;
-        }
+            .history-item:hover {
+                background-color: #f1f3f5;
+            }
     </style>
 }
+
 <div class="container-fluid consultation-wrapper">
     <div class="row mb-2 flex-shrink-0">
         <div class="col d-flex justify-content-between align-items-center">
@@ -31,6 +33,7 @@
             </a>
         </div>
     </div>
+
     <div class="row h-100 pb-4">
         <div class="col-md-4 h-100 d-flex flex-column">
             <div class="card mb-3 flex-shrink-0 shadow-sm">
@@ -103,7 +106,7 @@
                                                     <thead class="table-light">
                                                         <tr>
                                                             <th>Препарат</th>
-                                                            <th>Дозировка</th>
+                                                            <th>Применение</th>
                                                             <th>Тип</th>
                                                         </tr>
                                                     </thead>
@@ -112,7 +115,13 @@
                                                         {
                                                             <tr>
                                                                 <td class="fw-bold">@p.Medication?.Name</td>
-                                                                <td>@p.Dosage</td>
+                                                                <td>
+                                                                    <div>@p.Dosage</div>
+                                                                    @if (!string.IsNullOrEmpty(p.Instructions))
+                                                                    {
+                                                                        <small class="text-muted"><i>@p.Instructions</i></small>
+                                                                    }
+                                                                </td>
                                                                 <td>
                                                                     @if (p.Medication?.PrescriptionRequired == true)
                                                                     {
@@ -256,10 +265,12 @@
         </div>
     </div>
 </div>
+
 <template id="medRowTemplate">
     <div class="row g-2 mb-2 align-items-end med-row border-bottom pb-2">
         <div class="col-md-5">
-            <label class="small text-muted">Препарат</label><select class="form-select form-select-sm med-select" required>
+            <label class="small text-muted">Препарат</label>
+            <select class="form-select form-select-sm med-select" required>
                 <option value="">Поиск...</option>
                 @if (allMeds != null)
                 {
@@ -270,15 +281,27 @@
                 }
             </select>
         </div>
-        <div class="col-md-3"><label class="small text-muted">Дозировка</label><input type="text" class="form-control form-control-sm med-dosage" required></div>
-        <div class="col-md-3"><label class="small text-muted">Инструкция</label><input type="text" class="form-control form-control-sm med-instr"></div>
-        <div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeRow(this)"><i class="fas fa-times"></i></button></div>
+        <div class="col-md-3">
+            <label class="small text-muted">Дозировка</label>
+            <input type="text" class="form-control form-control-sm med-dosage" required>
+        </div>
+        <div class="col-md-3">
+            <label class="small text-muted">Инструкция</label>
+            <input type="text" class="form-control form-control-sm med-instr">
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeRow(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     </div>
 </template>
+
 <template id="recipeRowTemplate">
     <div class="row g-2 mb-2 align-items-end recipe-row border-bottom border-danger pb-2">
         <div class="col-md-5">
-            <label class="small text-muted text-danger fw-bold">Рецептурный препарат</label><select class="form-select form-select-sm recipe-select" required>
+            <label class="small text-muted text-danger fw-bold">Рецептурный препарат</label>
+            <select class="form-select form-select-sm recipe-select" required>
                 <option value="">Поиск...</option>
                 @if (strictMeds != null)
                 {
@@ -289,19 +312,29 @@
                 }
             </select>
         </div>
-        <div class="col-md-3"><label class="small text-muted">Дозировка</label><input type="text" class="form-control form-control-sm recipe-dosage" required></div>
-        <div class="col-md-3"><label class="small text-muted">Примечание</label><input type="text" class="form-control form-control-sm recipe-instr"></div>
-        <div class="col-md-1"><button type="button" class="btn btn-sm btn-danger w-100" onclick="removeRow(this)"><i class="fas fa-times"></i></button></div>
+        <div class="col-md-3">
+            <label class="small text-muted">Дозировка</label>
+            <input type="text" class="form-control form-control-sm recipe-dosage" required>
+        </div>
+        <div class="col-md-3">
+            <label class="small text-muted">Инструкция</label>
+            <input type="text" class="form-control form-control-sm recipe-instr">
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-sm btn-danger w-100" onclick="removeRow(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     </div>
 </template>
+
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/lib/jquery/jquery-3.7.1.min.js"></script>
+    <script src="~/lib/select2/select2.min.js"></script>
     <script src="~/js/consultation.js"></script>
 
     <script>
         window.diagnosesData = @Html.Raw(Json.Serialize(diagnoses));
-
 
         function showRecordDetails(id) {
             var content = document.getElementById('details-' + id).innerHTML;

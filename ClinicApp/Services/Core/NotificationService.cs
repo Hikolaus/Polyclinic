@@ -29,6 +29,9 @@ namespace ClinicApp.Services.Core
 
         public async Task NotifyAppointmentStatusChanged(Appointment appointment, string oldStatus)
         {
+            if (appointment.Status == AppointmentStatus.Cancelled)
+                return;
+
             string friendlyStatus = GetFriendlyStatusDescription(appointment.Status);
             string title = "Изменение статуса приема";
 
@@ -39,6 +42,10 @@ namespace ClinicApp.Services.Core
             else if (appointment.Status == AppointmentStatus.Completed)
             {
                 title = "Прием завершен";
+            }
+            else if (appointment.Status == AppointmentStatus.NoShow)
+            {
+                title = "Пропущенный прием";
             }
 
             var notification = new Notification
@@ -84,9 +91,18 @@ namespace ClinicApp.Services.Core
 
         public async Task MarkAllAsRead(int userId)
         {
-            await _context.Notifications
+            var notifications = await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
-                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+                .ToListAsync();
+
+            if (notifications.Any())
+            {
+                foreach (var n in notifications)
+                {
+                    n.IsRead = true;
+                }
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task<int> GetUnreadCount(int userId)
@@ -99,11 +115,10 @@ namespace ClinicApp.Services.Core
             return status switch
             {
                 AppointmentStatus.Scheduled => "Ваша запись подтверждена",
-                AppointmentStatus.Confirmed => "Врач подтвердил вашу запись",
                 AppointmentStatus.InProgress => "Ваш прием у врача начался",
                 AppointmentStatus.Completed => "Ваш прием завершен, результаты в медкарте",
                 AppointmentStatus.Cancelled => "Запись была отменена",
-                AppointmentStatus.NoShow => "Отмечена неявка на прием",
+                AppointmentStatus.NoShow => "Отмечена неявка на прием. Пожалуйста, предупреждайте об отмене заранее",
                 _ => "Статус обновлен"
             };
         }

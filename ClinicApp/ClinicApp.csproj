@@ -71,6 +71,10 @@
 
 	<ItemGroup>
 		<Folder Include="wwwroot\images\" />
+		<Folder Include="wwwroot\lib\bootstrap\" />
+		<Folder Include="wwwroot\lib\select2\" />
+		<Folder Include="wwwroot\lib\chartjs\" />
+		<Folder Include="wwwroot\lib\jquery\" />
 	</ItemGroup>
 
 </Project>

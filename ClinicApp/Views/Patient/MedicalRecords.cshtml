@@ -63,9 +63,15 @@
                                                     <tbody>
                                                         @foreach (var p in r.Appointment.Prescriptions)
                                                         {
-                                                            <tr class="align-middle">
+                                                            <tr class="align-middle border-bottom">
                                                                 <td class="fw-bold">@p.Medication?.Name</td>
-                                                                <td>@p.Dosage</td>
+                                                                <td>
+                                                                    <div>@p.Dosage</div>
+                                                                    @if (!string.IsNullOrEmpty(p.Instructions))
+                                                                    {
+                                                                        <small class="text-muted"><i>@p.Instructions</i></small>
+                                                                    }
+                                                                </td>
                                                                 <td class="text-end">
                                                                     @if (p.Medication?.PrescriptionRequired == true)
                                                                     {

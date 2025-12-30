@@ -2,7 +2,9 @@
 let recipeIndex = 0;
 
 $(document).ready(function () {
-    $('#diagnosisSelect').select2({
+    const $diagSelect = $('#diagnosisSelect');
+
+    $diagSelect.select2({
         theme: "bootstrap-5",
         width: '100%',
         placeholder: "Введите код или название болезни...",
@@ -10,26 +12,31 @@ $(document).ready(function () {
         language: { noResults: function () { return "Диагноз не найден"; } }
     });
 
-    $('#diagnosisSelect').on('select2:select', function (e) {
-        var selectedId = e.params.data.id;
+    $diagSelect.on('select2:select', function (e) {
+        const selectedId = e.params.data.id;
+        console.log("Выбран ID диагноза:", selectedId);
 
-        if (window.diagnosesData) {
-            var diagnosis = window.diagnosesData.find(d => d.id == selectedId);
+        if (window.diagnosesData && window.diagnosesData.length > 0) {
+            const diagnosis = window.diagnosesData.find(d => {
+                const id = (d.id !== undefined) ? d.id : d.Id;
+                return id == selectedId;
+            });
 
             if (diagnosis) {
-                var treatmentArea = $('#treatmentArea');
-                var recomArea = $('#recomArea');
+                console.log("Данные найдены:", diagnosis);
 
-                var treatText = diagnosis.DefaultTreatment || diagnosis.defaultTreatment;
-                var recomText = diagnosis.DefaultRecommendations || diagnosis.defaultRecommendations;
+                const treatText = diagnosis.defaultTreatment !== undefined ? diagnosis.defaultTreatment : diagnosis.DefaultTreatment;
+                const recomText = diagnosis.defaultRecommendations !== undefined ? diagnosis.defaultRecommendations : diagnosis.DefaultRecommendations;
 
-                if (treatText) {
-                    treatmentArea.val(treatText);
+                $('#treatmentArea').val(treatText || "");
+                $('#recomArea').val(recomText || "");
+
+                if (treatText || recomText) {
+                    $('#treatmentArea').addClass('is-valid');
+                    setTimeout(() => $('#treatmentArea').removeClass('is-valid'), 800);
                 }
-
-                if (recomText) {
-                    recomArea.val(recomText);
-                }
+            } else {
+                console.warn("Диагноз не найден в кэше JavaScript");
             }
         }
     });
@@ -50,10 +57,12 @@ function addMedRow() {
     const clone = template.content.cloneNode(true);
     const row = clone.querySelector('.med-row');
     const select = row.querySelector('.med-select');
+
     select.name = `Meds[${medIndex}].MedicationId`;
     select.id = `med-select-${medIndex}`;
     row.querySelector('.med-dosage').name = `Meds[${medIndex}].Dosage`;
     row.querySelector('.med-instr').name = `Meds[${medIndex}].Instructions`;
+
     container.appendChild(clone);
     initSelect2(`#med-select-${medIndex}`);
     medIndex++;
@@ -65,10 +74,12 @@ function addRecipeRow() {
     const clone = template.content.cloneNode(true);
     const row = clone.querySelector('.recipe-row');
     const select = row.querySelector('.recipe-select');
+
     select.name = `Recipes[${recipeIndex}].MedicationId`;
     select.id = `recipe-select-${recipeIndex}`;
     row.querySelector('.recipe-dosage').name = `Recipes[${recipeIndex}].Dosage`;
     row.querySelector('.recipe-instr').name = `Recipes[${recipeIndex}].Instructions`;
+
     container.appendChild(clone);
     initSelect2(`#recipe-select-${recipeIndex}`);
     recipeIndex++;
@@ -77,6 +88,8 @@ function addRecipeRow() {
 function removeRow(btn) {
     const row = btn.closest('.row');
     const select = row.querySelector('select');
-    if ($(select).data('select2')) { $(select).select2('destroy'); }
+    if ($(select).data('select2')) {
+        $(select).select2('destroy');
+    }
     row.remove();
 }

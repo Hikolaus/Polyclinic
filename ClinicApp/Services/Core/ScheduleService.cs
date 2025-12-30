@@ -49,7 +49,6 @@ namespace ClinicApp.Services.Core
                             .AnyAsync(a => a.DoctorId == doctorId &&
                                          a.AppointmentDateTime == currentTime &&
                                          (a.Status == AppointmentStatus.Scheduled ||
-                                          a.Status == AppointmentStatus.Confirmed ||
                                           a.Status == AppointmentStatus.InProgress));
 
                         timeSlots.Add(new TimeSlot
@@ -137,7 +136,7 @@ namespace ClinicApp.Services.Core
                 .Where(a => a.DoctorId == doctorId &&
                        a.AppointmentDateTime >= startDate &&
                        a.AppointmentDateTime < endDate &&
-                       (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed))
+                       a.Status == AppointmentStatus.Scheduled)
                 .ToListAsync();
 
             var result = new List<object>();

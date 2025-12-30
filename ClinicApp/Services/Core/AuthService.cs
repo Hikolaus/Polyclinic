@@ -101,6 +101,18 @@ namespace ClinicApp.Services.Core
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
 
+                var welcomeNotification = new Notification
+                {
+                    UserId = user.Id,
+                    Title = "Добро пожаловать",
+                    Message = "Вы успешно зарегистрировались в системе Поликлиники.",
+                    Type = NotificationType.System,
+                    CreatedAt = DateTime.Now,
+                    IsRead = false
+                };
+                _context.Notifications.Add(welcomeNotification);
+                await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
                 return true;
             }

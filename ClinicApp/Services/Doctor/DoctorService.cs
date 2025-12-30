@@ -103,6 +103,15 @@ namespace ClinicApp.Services.DoctorService
             return await _context.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Include(a => a.Patient).ThenInclude(p => p.MedicalRecords)
+                    .ThenInclude(m => m.Appointment)
+                        .ThenInclude(app => app.Doctor)
+                            .ThenInclude(d => d.Specialization)
+
+                .Include(a => a.Patient).ThenInclude(p => p.MedicalRecords)
+                    .ThenInclude(m => m.Appointment)
+                        .ThenInclude(app => app.Prescriptions)
+                            .ThenInclude(pr => pr.Medication)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(a => a.Id == appointmentId);
         }
 
@@ -153,7 +162,7 @@ namespace ClinicApp.Services.DoctorService
                 if (model.DiagnosisId > 0)
                 {
                     var d = await _context.Diagnoses.FindAsync(model.DiagnosisId);
-                    if (d != null) diagText = $"{d.Code} — {d.Name} " + diagText;
+                    if (d != null) diagText = $"{d.Code} - {d.Name} " + diagText;
                 }
 
                 var record = new MedicalRecord
@@ -194,6 +203,9 @@ namespace ClinicApp.Services.DoctorService
                 appointment.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
+
+                await _notificationService.NotifyAppointmentStatusChanged(appointment, AppointmentStatus.InProgress.ToString());
+
                 await transaction.CommitAsync();
                 return true;
             }
@@ -219,20 +231,23 @@ namespace ClinicApp.Services.DoctorService
         {
             return await _context.Patients
                 .Include(p => p.User)
-
                 .Include(p => p.MedicalRecords)
                     .ThenInclude(m => m.Appointment)
                         .ThenInclude(a => a.Doctor)
                             .ThenInclude(d => d.Specialization)
+                .Include(p => p.MedicalRecords)
+                    .ThenInclude(m => m.Appointment)
+                        .ThenInclude(a => a.Prescriptions)
+                            .ThenInclude(pr => pr.Medication)
                 .Include(p => p.Prescriptions)
                     .ThenInclude(pr => pr.Medication)
-
                 .Include(p => p.Appointments)
                     .ThenInclude(a => a.Doctor)
                         .ThenInclude(d => d.Specialization)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
+
 
         public async Task<(List<Medication> All, List<Medication> Strict, List<Diagnosis> Diagnoses)> GetConsultationData()
         {

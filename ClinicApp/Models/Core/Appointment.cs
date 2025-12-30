@@ -8,7 +8,6 @@ namespace ClinicApp.Models.Core
     public enum AppointmentStatus
     {
         Scheduled,
-        Confirmed,
         InProgress,
         Completed,
         Cancelled,

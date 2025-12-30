@@ -14,7 +14,7 @@
         <h2><i class="fas fa-bell text-warning me-2"></i>Центр уведомлений</h2>
         @if (unread.Any())
         {
-            <form asp-controller="Notifications" asp-action="MarkAllAsRead" method="post">
+            <form action="/Notifications/MarkAllAsRead" method="post">
                 @Html.AntiForgeryToken()
 
                 <button type="submit" class="btn btn-outline-secondary btn-sm">
@@ -131,7 +131,6 @@
                  .Replace("Scheduled", "запланирована")
                  .Replace("Completed", "завершен")
                  .Replace("Cancelled", "отменена")
-                 .Replace("Confirmed", "подтверждена")
                  .Replace("NoShow", "не состоялась (неявка)");
 
         msg = msg.Replace("Статус записи к изменен на", "Статус вашей записи изменился на:");
